@@ -12,7 +12,10 @@ std::vector<std::string> CommandParser::tokenize(
     char quote = '\0';
 
     for (char character : input) {
-        if (character == '"' || character == '\'') {
+        if (
+            character == '"'
+            || character == '\''
+        ) {
             if (quote == '\0') {
                 quote = character;
             }
@@ -27,7 +30,9 @@ std::vector<std::string> CommandParser::tokenize(
         }
 
         if (
-            std::isspace(static_cast<unsigned char>(character))
+            std::isspace(
+                static_cast<unsigned char>(character)
+            )
             && quote == '\0'
         ) {
             if (!current.empty()) {
@@ -53,10 +58,13 @@ std::vector<std::string> CommandParser::tokenize(
     return tokens;
 }
 
-Command CommandParser::parse(const std::string& input) {
+Command CommandParser::parse(
+    const std::string& input
+) {
     Command command;
 
-    std::vector<std::string> tokens = tokenize(input);
+    std::vector<std::string> tokens =
+        tokenize(input);
 
     if (tokens.empty()) {
         return command;
@@ -64,8 +72,14 @@ Command CommandParser::parse(const std::string& input) {
 
     command.action = tokens[0];
 
-    for (std::size_t i = 1; i < tokens.size(); ++i) {
-        command.arguments.push_back(tokens[i]);
+    for (
+        std::size_t i = 1;
+        i < tokens.size();
+        ++i
+    ) {
+        command.arguments.push_back(
+            tokens[i]
+        );
     }
 
     return command;

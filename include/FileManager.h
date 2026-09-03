@@ -23,11 +23,19 @@ public:
 
     fs::path get_current_directory() const;
 
-    void change_directory(const std::string& name);
+    void change_directory(
+        const std::string& name
+    );
+
     void go_back();
 
-    void make_directory(const std::string& name);
-    void create_file(const std::string& name);
+    void make_directory(
+        const std::string& name
+    );
+
+    void create_file(
+        const std::string& name
+    );
 
     void rename_item(
         const std::string& old_name,
@@ -44,15 +52,33 @@ public:
         const std::string& destination
     );
 
-    void remove_item(const std::string& name);
+    void remove_item(
+        const std::string& name
+    );
 
-    void show_file_size(const std::string& name) const;
-    void show_file_type(const std::string& name) const;
-    void show_modified_time(const std::string& name) const;
-    void show_info(const std::string& name) const;
+    void show_file_size(
+        const std::string& name
+    ) const;
 
-    void show_tree(const std::string& name = ".") const;
-    void show_directory_size(const std::string& name) const;
+    void show_file_type(
+        const std::string& name
+    ) const;
+
+    void show_modified_time(
+        const std::string& name
+    ) const;
+
+    void show_info(
+        const std::string& name
+    ) const;
+
+    void show_tree(
+        const std::string& name = "."
+    ) const;
+
+    void show_directory_size(
+        const std::string& name
+    ) const;
 
     void find_by_name(
         const std::string& name,
@@ -69,7 +95,9 @@ public:
         const std::string& path = "."
     ) const;
 
-    void show_permissions(const std::string& name) const;
+    void show_permissions(
+        const std::string& name
+    ) const;
 
     void change_permissions(
         const std::string& mode,
@@ -86,20 +114,26 @@ public:
         const std::string& link_name
     ) const;
 
-    void show_link_target(const std::string& name) const;
+    void show_link_target(
+        const std::string& name
+    ) const;
 
 private:
     std::string format_time(
         const fs::file_time_type& file_time
     ) const;
 
-    fs::path resolve_path(const std::string& path) const;
+    fs::path resolve_path(
+        const std::string& path
+    ) const;
 
     std::string permission_string(
         const fs::path& path
     ) const;
 
-    bool is_hidden(const fs::path& path) const;
+    bool is_hidden(
+        const fs::path& path
+    ) const;
 
     void print_tree_recursive(
         const fs::path& path,

@@ -27,13 +27,18 @@ std::string FileHasher::hash_file(
     constexpr std::uint64_t prime =
         1099511628211ULL;
 
-    std::uint64_t hash = offset_basis;
+    std::uint64_t hash =
+        offset_basis;
 
     char buffer[8192];
 
-    while (file.read(buffer, sizeof(buffer)) ||
-           file.gcount() > 0) {
-
+    while (
+        file.read(
+            buffer,
+            sizeof(buffer)
+        )
+        || file.gcount() > 0
+    ) {
         std::streamsize bytes_read =
             file.gcount();
 

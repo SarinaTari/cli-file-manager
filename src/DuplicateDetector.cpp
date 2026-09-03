@@ -1,113 +1,15 @@
 #include "DuplicateDetector.h"
 
-#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <system_error>
-
-void DuplicateDetector::collect_files(
-    const fs::path& root,
-    std::vector<fs::path>& files
-) {
-    std::error_code ec;
-
-    /*
-     * Root doesn't exist.
-     */
-    if (!fs::exists(root, ec)) {
-        return;
-    }
-
-    /*
-     * If the user gave us a single file,
-     * add it directly.
-     */
-    if (fs::is_regular_file(root, ec)) {
-        files.push_back(root);
-        return;
-    }
-
-    /*
-     * We only recursively scan directories.
-     */
-    if (!fs::is_directory(root, ec)) {
-        return;
-    }
-
-    fs::recursive_directory_iterator iterator(
-        root,
-        fs::directory_options::skip_permission_denied,
-        ec
-    );
-
-    fs::recursive_directory_iterator end;
-
-    while (iterator != end) {
-        if (ec) {
-            ec.clear();
-
-            iterator.increment(ec);
-
-            continue;
-        }
-
-        std::error_code entry_error;
-
-        if (
-            iterator->is_regular_file(
-                entry_error
-            )
-        ) {
-            files.push_back(
-                iterator->path()
-            );
-        }
-
-        iterator.increment(ec);
-    }
-}
-
+#include <vector>
 
 bool DuplicateDetector::files_equal(
     const fs::path& first,
     const fs::path& second
 ) {
-    std::error_code ec;
-
-    /*
-     * First compare file sizes.
-     *
-     * Different sizes means the files
-     * cannot possibly be identical.
-     */
-    std::uintmax_t first_size =
-        fs::file_size(
-            first,
-            ec
-        );
-
-    if (ec) {
-        return false;
-    }
-
-    std::uintmax_t second_size =
-        fs::file_size(
-            second,
-            ec
-        );
-
-    if (ec) {
-        return false;
-    }
-
-    if (first_size != second_size) {
-        return false;
-    }
-
-    /*
-     * Open both files in binary mode.
-     */
     std::ifstream first_file(
         first,
         std::ios::binary
@@ -122,9 +24,6 @@ bool DuplicateDetector::files_equal(
         return false;
     }
 
-    /*
-     * Compare the contents in chunks.
-     */
     char first_buffer[8192];
     char second_buffer[8192];
 
@@ -145,208 +44,216 @@ bool DuplicateDetector::files_equal(
         std::streamsize second_count =
             second_file.gcount();
 
-        /*
-         * Different number of bytes read.
-         */
         if (first_count != second_count) {
             return false;
         }
 
-        /*
-         * Both files reached EOF.
-         */
         if (first_count == 0) {
-            break;
+            return true;
         }
 
-        /*
-         * Compare the bytes.
-         */
-        if (
-            !std::equal(
-                first_buffer,
-                first_buffer + first_count,
-                second_buffer
-            )
+        for (
+            std::streamsize i = 0;
+            i < first_count;
+            ++i
         ) {
-            return false;
+            if (
+                first_buffer[i]
+                != second_buffer[i]
+            ) {
+                return false;
+            }
         }
     }
-
-    return true;
 }
 
+void DuplicateDetector::collect_files(
+    const fs::path& root,
+    std::vector<fs::path>& files
+) {
+    std::error_code ec;
+
+    if (fs::is_regular_file(root, ec)) {
+        files.push_back(root);
+        return;
+    }
+
+    if (!fs::is_directory(root, ec)) {
+        return;
+    }
+
+    fs::recursive_directory_iterator iterator(
+        root,
+        fs::directory_options::skip_permission_denied,
+        ec
+    );
+
+    fs::recursive_directory_iterator end;
+
+    while (iterator != end) {
+        if (ec) {
+            ec.clear();
+            iterator.increment(ec);
+            continue;
+        }
+
+        const fs::directory_entry& entry =
+            *iterator;
+
+        std::error_code entry_ec;
+
+        if (
+            entry.is_regular_file(entry_ec)
+            && !entry.is_symlink(entry_ec)
+        ) {
+            files.push_back(
+                entry.path()
+            );
+        }
+
+        iterator.increment(ec);
+    }
+}
 
 void DuplicateDetector::find_duplicates(
     const fs::path& root
 ) {
+    std::error_code ec;
+
+    if (!fs::exists(root, ec)) {
+        std::cout
+            << "No duplicate files found.\n";
+
+        return;
+    }
+
     std::vector<fs::path> files;
 
-    /*
-     * Step 1:
-     * Collect every regular file.
-     */
     collect_files(
         root,
         files
     );
 
+    if (files.size() < 2) {
+        std::cout
+            << "No duplicate files found.\n";
+
+        return;
+    }
+
     /*
-     * Step 2:
-     * Group files by size.
+     * First group files by size.
      *
-     * Files with different sizes cannot
-     * be duplicates.
+     * Two files with different sizes cannot be
+     * duplicates, so there is no reason to compare
+     * their contents.
      */
     std::map<
         std::uintmax_t,
         std::vector<fs::path>
-    > files_by_size;
+    > size_groups;
 
-    for (const auto& file : files) {
-        std::error_code ec;
+    for (const fs::path& file : files) {
+        std::error_code size_ec;
 
         std::uintmax_t size =
             fs::file_size(
                 file,
-                ec
+                size_ec
             );
 
-        if (!ec) {
-            files_by_size[size].push_back(
+        if (!size_ec) {
+            size_groups[size].push_back(
                 file
             );
         }
     }
 
+    /*
+     * Compare files having the same size.
+     *
+     * The actual bytes are compared, so we never
+     * report files as duplicates merely because of
+     * a hash collision.
+     */
     bool found_duplicates = false;
 
-    /*
-     * Step 3:
-     * For every size group containing at
-     * least two files, calculate hashes.
-     */
     for (
-        const auto& size_group
-        : files_by_size
+        const auto& size_group :
+        size_groups
     ) {
-        const auto& candidates =
+        const std::vector<fs::path>& candidates =
             size_group.second;
 
         if (candidates.size() < 2) {
             continue;
         }
 
-        std::map<
-            std::string,
-            std::vector<fs::path>
-        > files_by_hash;
+        std::vector<bool> already_reported(
+            candidates.size(),
+            false
+        );
 
-        for (const auto& file : candidates) {
-            try {
-                std::string hash =
-                    FileHasher::hash_file(
-                        file
-                    );
-
-                files_by_hash[hash].push_back(
-                    file
-                );
-            }
-            catch (
-                const std::exception&
-            ) {
-                /*
-                 * Ignore files that cannot
-                 * be opened or hashed.
-                 */
-            }
-        }
-
-        /*
-         * Step 4:
-         * Files with the same size and hash
-         * are potential duplicates.
-         */
         for (
-            const auto& hash_group
-            : files_by_hash
+            std::size_t i = 0;
+            i < candidates.size();
+            ++i
         ) {
-            const std::string& hash =
-                hash_group.first;
-
-            const auto& candidates_with_hash =
-                hash_group.second;
-
-            if (
-                candidates_with_hash.size()
-                < 2
-            ) {
+            if (already_reported[i]) {
                 continue;
             }
 
-            /*
-             * Hashes are a fast way to find
-             * candidates, but we perform an
-             * actual byte-for-byte comparison
-             * before declaring duplicates.
-             */
-            const fs::path& first =
-                candidates_with_hash[0];
+            std::vector<std::size_t> duplicates;
 
-            std::vector<fs::path>
-                duplicate_group;
+            duplicates.push_back(i);
 
             for (
-                const auto& file
-                : candidates_with_hash
+                std::size_t j = i + 1;
+                j < candidates.size();
+                ++j
             ) {
+                if (already_reported[j]) {
+                    continue;
+                }
+
                 if (
                     files_equal(
-                        first,
-                        file
+                        candidates[i],
+                        candidates[j]
                     )
                 ) {
-                    duplicate_group.push_back(
-                        file
-                    );
+                    duplicates.push_back(j);
                 }
             }
 
-            if (
-                duplicate_group.size() < 2
-            ) {
+            if (duplicates.size() < 2) {
                 continue;
             }
 
             found_duplicates = true;
 
             std::cout
-                << "\nDuplicate group "
-                << "(size: "
+                << "Duplicate group"
+                << " (size: "
                 << size_group.first
                 << " bytes)\n";
 
-            std::cout
-                << "Hash: "
-                << hash
-                << "\n";
-
             for (
-                const auto& file
-                : duplicate_group
+                std::size_t index :
+                duplicates
             ) {
                 std::cout
                     << "  "
-                    << file
+                    << candidates[index]
                     << "\n";
+
+                already_reported[index] = true;
             }
+
+            std::cout << "\n";
         }
     }
 
-    /*
-     * Nothing duplicated.
-     */
     if (!found_duplicates) {
         std::cout
             << "No duplicate files found.\n";

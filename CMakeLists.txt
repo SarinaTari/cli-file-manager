@@ -13,6 +13,9 @@ add_executable(filemanager
     src/FileHasher.cpp
     src/DuplicateDetector.cpp
     src/StorageAnalyzer.cpp
+    src/ProjectDetector.cpp
+    src/GitAnalyzer.cpp
+    src/DependencyAnalyzer.cpp
 )
 
 target_include_directories(filemanager PRIVATE
@@ -23,5 +26,7 @@ enable_testing()
 
 add_test(
     NAME cli_file_manager_integration
-    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cli.sh $<TARGET_FILE:filemanager>
+    COMMAND bash
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cli.sh
+        $<TARGET_FILE:filemanager>
 )

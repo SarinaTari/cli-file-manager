@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <stdexcept>
 #include <system_error>
 #include <vector>
 
@@ -55,7 +56,8 @@ void StorageAnalyzer::analyze(
         else if (entry.is_regular_file(ec)) {
             ++file_count;
 
-            auto size = entry.file_size(ec);
+            auto size =
+                entry.file_size(ec);
 
             if (!ec) {
                 total_size += size;
@@ -102,9 +104,16 @@ void StorageAnalyzer::analyze(
         << "\nLargest files:\n";
 
     std::size_t limit =
-        std::min<std::size_t>(10, files.size());
+        std::min<std::size_t>(
+            10,
+            files.size()
+        );
 
-    for (std::size_t i = 0; i < limit; ++i) {
+    for (
+        std::size_t i = 0;
+        i < limit;
+        ++i
+    ) {
         std::cout
             << "  "
             << (i + 1)

@@ -26,41 +26,28 @@ private:
     std::string status_message;
 
 public:
-    explicit TerminalUI(FileManager& manager);
+    explicit TerminalUI(
+        FileManager& manager
+    );
 
     void run();
 
 private:
     void refresh();
-
     void render();
-
     void render_header();
-
     void render_entries();
-
     void render_info();
-
     void render_footer();
-
     void handle_input();
-
     void handle_normal_mode(char key);
-
     void handle_command_mode(char key);
-
     void open_selected();
-
     void go_back();
-
     void execute_command();
-
     void clear_screen();
-
     void move_cursor_home();
-
     void hide_cursor();
-
     void show_cursor();
 
     std::string format_entry(

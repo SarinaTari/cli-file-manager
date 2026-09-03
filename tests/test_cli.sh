@@ -696,6 +696,100 @@ assert_contains \
     "No duplicate files found" \
     "duplicates handles nonexistent paths"
 
+# ============================================================
+# Phase 13: Developer Intelligence
+# ============================================================
+
+PROJECT_DIR="$TEST_DIR/project-test"
+
+mkdir -p "$PROJECT_DIR/src"
+mkdir -p "$PROJECT_DIR/include"
+
+cat > "$PROJECT_DIR/CMakeLists.txt" <<'EOF'
+cmake_minimum_required(VERSION 3.16)
+project(test_project)
+EOF
+
+cat > "$PROJECT_DIR/src/main.cpp" <<'EOF'
+#include <iostream>
+#include "test.h"
+
+int main() {
+    return 0;
+}
+EOF
+
+cat > "$PROJECT_DIR/include/test.h" <<'EOF'
+#pragma once
+
+void test_function();
+EOF
+
+OUTPUT="$(run_program "project \"$PROJECT_DIR\"
+q
+")"
+
+assert_contains \
+    "$OUTPUT" \
+    "C++ / CMake" \
+    "project detects CMake C++ project"
+
+assert_contains \
+    "$OUTPUT" \
+    "C/C++ source files: 1" \
+    "project counts C++ source files"
+
+assert_contains \
+    "$OUTPUT" \
+    "C/C++ header files: 1" \
+    "project counts C++ header files"
+
+OUTPUT="$(run_program "deps \"$PROJECT_DIR\"
+q
+")"
+
+assert_contains \
+    "$OUTPUT" \
+    "C/C++ files: 2" \
+    "deps counts C++ files"
+
+assert_contains \
+    "$OUTPUT" \
+    "#include relationships:" \
+    "deps displays include relationships"
+
+assert_contains \
+    "$OUTPUT" \
+    "iostream" \
+    "deps detects standard library include"
+
+assert_contains \
+    "$OUTPUT" \
+    "test.h" \
+    "deps detects local header include"
+
+git -C "$TEST_DIR" init -q
+
+OUTPUT="$(run_program "git .
+q
+")"
+
+assert_contains \
+    "$OUTPUT" \
+    "Git repository: Yes" \
+    "git detects repository"
+
+assert_contains \
+    "$OUTPUT" \
+    "Repository root:" \
+    "git displays repository root"
+
+assert_contains \
+    "$OUTPUT" \
+    "Branch:" \
+    "git displays branch"
+
+rm -rf "$PROJECT_DIR"
 
 # ============================================================
 # UI COMMAND
