@@ -1,92 +1,16 @@
 #include "CommandParser.h"
 #include "FileManager.h"
+#include "TerminalUI.h"
 
+#include <cstdint>
+#include <filesystem>
 #include <iostream>
 #include <limits>
-#include <stdexcept>
 #include <string>
 
-void print_help() {
-    std::cout << R"(
-================ CLI FILE MANAGER ================
+namespace fs = std::filesystem;
 
-Navigation
-----------
-pwd
-cd <path>
-back
-ls
-ls -a
-ls --files
-ls --dirs
-ls --name
-ls --size
-ls --name-desc
-ls --size-desc
-
-File Operations
----------------
-mkdir <name>
-touch <name>
-rename <old> <new>
-cp <source> <destination>
-mv <source> <destination>
-rm <path>
-
-Information
------------
-size <file>
-type <path>
-modified <path>
-info <path>
-
-Recursive Operations
---------------------
-tree [path]
-du <path>
-
-Search
-------
-find <name> [path]
-findext <extension> [path]
-findsize <minimum_bytes> [path]
-
-Unix Permissions
-----------------
-perm <path>
-chmod <mode> <path>
-
-Links
------
-link <target> <link>
-ln <target> <link>
-ln -s <target> <link>
-readlink <path>
-
-Other
------
-help
-quit
-exit
-q
-
-Examples
---------
-ls -a
-ls --files
-find main.cpp
-findext cpp
-findsize 100000 .
-chmod 755 script.sh
-perm script.sh
-ln -s file.txt shortcut.txt
-readlink shortcut.txt
-
-===================================================
-)";
-}
-
-bool is_unsigned_integer(
+static bool is_unsigned_integer(
     const std::string& value
 ) {
     if (value.empty()) {
@@ -105,33 +29,83 @@ bool is_unsigned_integer(
     return true;
 }
 
-int main() {
-    FileManager file_manager;
+static void print_help() {
+    std::cout << R"(
+Available commands:
 
-    std::cout
-        << "CLI File Manager\n"
-        << "Type 'help' for commands.\n\n";
+Navigation:
+  pwd
+  cd <directory>
+  back
+
+Listing:
+  ls
+  ls -a
+  ls --files
+  ls --dirs
+  ls --name
+  ls --size
+  ls --name-desc
+  ls --size-desc
+
+File operations:
+  mkdir <name>
+  touch <name>
+  rename <old> <new>
+  cp <source> <destination>
+  mv <source> <destination>
+  rm <name>
+
+Information:
+  size <file>
+  type <file>
+  modified <file>
+  info <file>
+
+Recursive:
+  tree [path]
+  du <path>
+
+Search:
+  find <name> [path]
+  findext <extension> [path]
+  findsize <minimum_bytes> [path]
+
+Permissions:
+  perm <path>
+  chmod <mode> <path>
+
+Links:
+  ln <target> <link>
+  ln -s <target> <link>
+  readlink <path>
+
+Interface:
+  ui
+  help
+  q
+  quit
+  exit
+)";
+}
+
+static void run_command_mode(
+    FileManager& file_manager
+) {
+    std::cout << "CLI File Manager\n";
+    std::cout << "Type 'help' for commands.\n\n";
+
+    std::string input;
 
     while (true) {
+        std::cout << "fm> ";
+
+        if (!std::getline(std::cin, input)) {
+            std::cout << "\nGoodbye.\n";
+            break;
+        }
 
         try {
-            std::cout << "\nfm> ";
-
-            std::string input;
-
-            if (!std::getline(
-                    std::cin,
-                    input
-                )) {
-                std::cout
-                    << "\nGoodbye.\n";
-                break;
-            }
-
-            if (input.empty()) {
-                continue;
-            }
-
             Command command =
                 CommandParser::parse(input);
 
@@ -139,43 +113,34 @@ int main() {
                 continue;
             }
 
-            const std::string& action =
-                command.action;
-
-            // =================================================
-            // Exit
-            // =================================================
-
             if (
-                action == "q"
-                || action == "quit"
-                || action == "exit"
+                command.action == "q"
+                || command.action == "quit"
+                || command.action == "exit"
             ) {
-                std::cout
-                    << "Goodbye.\n";
+                std::cout << "Goodbye.\n";
                 break;
             }
 
-            // =================================================
-            // Help
-            // =================================================
+            if (command.action == "ui") {
+                TerminalUI ui(file_manager);
+                ui.run();
 
-            if (action == "help") {
+                std::cout << "\n";
+                continue;
+            }
+
+            if (command.action == "help") {
                 if (!command.arguments.empty()) {
                     throw std::invalid_argument(
-                        "help does not accept arguments."
+                        "Usage: help"
                     );
                 }
 
                 print_help();
-                continue;
             }
 
-            // =================================================
-            // pwd
-            // =================================================
-
-            if (action == "pwd") {
+            else if (command.action == "pwd") {
                 if (!command.arguments.empty()) {
                     throw std::invalid_argument(
                         "Usage: pwd"
@@ -183,14 +148,21 @@ int main() {
                 }
 
                 file_manager.print_working_directory();
-                continue;
             }
 
-            // =================================================
-            // back
-            // =================================================
+            else if (command.action == "cd") {
+                if (command.arguments.size() != 1) {
+                    throw std::invalid_argument(
+                        "Usage: cd <directory>"
+                    );
+                }
 
-            if (action == "back") {
+                file_manager.change_directory(
+                    command.arguments[0]
+                );
+            }
+
+            else if (command.action == "back") {
                 if (!command.arguments.empty()) {
                     throw std::invalid_argument(
                         "Usage: back"
@@ -198,73 +170,36 @@ int main() {
                 }
 
                 file_manager.go_back();
-                continue;
             }
 
-            // =================================================
-            // cd
-            // =================================================
-
-            if (action == "cd") {
-                if (command.arguments.size() != 1) {
-                    throw std::invalid_argument(
-                        "Usage: cd <path>"
-                    );
-                }
-
-                file_manager.change_directory(
-                    command.arguments[0]
-                );
-
-                continue;
-            }
-
-            // =================================================
-            // ls
-            // =================================================
-
-            if (action == "ls") {
-
+            else if (command.action == "ls") {
                 bool show_hidden = false;
                 std::string sort_option = "name";
                 std::string filter = "all";
 
                 for (
-                    const std::string& argument :
-                    command.arguments
+                    const std::string& argument
+                    : command.arguments
                 ) {
-
                     if (argument == "-a") {
                         show_hidden = true;
                     }
-                    else if (
-                        argument == "--files"
-                    ) {
+                    else if (argument == "--files") {
                         filter = "files";
                     }
-                    else if (
-                        argument == "--dirs"
-                    ) {
+                    else if (argument == "--dirs") {
                         filter = "dirs";
                     }
-                    else if (
-                        argument == "--name"
-                    ) {
+                    else if (argument == "--name") {
                         sort_option = "name";
                     }
-                    else if (
-                        argument == "--size"
-                    ) {
+                    else if (argument == "--size") {
                         sort_option = "size";
                     }
-                    else if (
-                        argument == "--name-desc"
-                    ) {
+                    else if (argument == "--name-desc") {
                         sort_option = "name-desc";
                     }
-                    else if (
-                        argument == "--size-desc"
-                    ) {
+                    else if (argument == "--size-desc") {
                         sort_option = "size-desc";
                     }
                     else {
@@ -280,15 +215,9 @@ int main() {
                     sort_option,
                     filter
                 );
-
-                continue;
             }
 
-            // =================================================
-            // mkdir
-            // =================================================
-
-            if (action == "mkdir") {
+            else if (command.action == "mkdir") {
                 if (command.arguments.size() != 1) {
                     throw std::invalid_argument(
                         "Usage: mkdir <name>"
@@ -298,15 +227,9 @@ int main() {
                 file_manager.make_directory(
                     command.arguments[0]
                 );
-
-                continue;
             }
 
-            // =================================================
-            // touch
-            // =================================================
-
-            if (action == "touch") {
+            else if (command.action == "touch") {
                 if (command.arguments.size() != 1) {
                     throw std::invalid_argument(
                         "Usage: touch <name>"
@@ -316,15 +239,9 @@ int main() {
                 file_manager.create_file(
                     command.arguments[0]
                 );
-
-                continue;
             }
 
-            // =================================================
-            // rename
-            // =================================================
-
-            if (action == "rename") {
+            else if (command.action == "rename") {
                 if (command.arguments.size() != 2) {
                     throw std::invalid_argument(
                         "Usage: rename <old> <new>"
@@ -335,15 +252,9 @@ int main() {
                     command.arguments[0],
                     command.arguments[1]
                 );
-
-                continue;
             }
 
-            // =================================================
-            // cp
-            // =================================================
-
-            if (action == "cp") {
+            else if (command.action == "cp") {
                 if (command.arguments.size() != 2) {
                     throw std::invalid_argument(
                         "Usage: cp <source> <destination>"
@@ -354,15 +265,9 @@ int main() {
                     command.arguments[0],
                     command.arguments[1]
                 );
-
-                continue;
             }
 
-            // =================================================
-            // mv
-            // =================================================
-
-            if (action == "mv") {
+            else if (command.action == "mv") {
                 if (command.arguments.size() != 2) {
                     throw std::invalid_argument(
                         "Usage: mv <source> <destination>"
@@ -373,33 +278,21 @@ int main() {
                     command.arguments[0],
                     command.arguments[1]
                 );
-
-                continue;
             }
 
-            // =================================================
-            // rm
-            // =================================================
-
-            if (action == "rm") {
+            else if (command.action == "rm") {
                 if (command.arguments.size() != 1) {
                     throw std::invalid_argument(
-                        "Usage: rm <path>"
+                        "Usage: rm <name>"
                     );
                 }
 
                 file_manager.remove_item(
                     command.arguments[0]
                 );
-
-                continue;
             }
 
-            // =================================================
-            // size
-            // =================================================
-
-            if (action == "size") {
+            else if (command.action == "size") {
                 if (command.arguments.size() != 1) {
                     throw std::invalid_argument(
                         "Usage: size <file>"
@@ -409,71 +302,48 @@ int main() {
                 file_manager.show_file_size(
                     command.arguments[0]
                 );
-
-                continue;
             }
 
-            // =================================================
-            // type
-            // =================================================
-
-            if (action == "type") {
+            else if (command.action == "type") {
                 if (command.arguments.size() != 1) {
                     throw std::invalid_argument(
-                        "Usage: type <path>"
+                        "Usage: type <file>"
                     );
                 }
 
                 file_manager.show_file_type(
                     command.arguments[0]
                 );
-
-                continue;
             }
 
-            // =================================================
-            // modified
-            // =================================================
-
-            if (action == "modified") {
+            else if (command.action == "modified") {
                 if (command.arguments.size() != 1) {
                     throw std::invalid_argument(
-                        "Usage: modified <path>"
+                        "Usage: modified <file>"
                     );
                 }
 
                 file_manager.show_modified_time(
                     command.arguments[0]
                 );
-
-                continue;
             }
 
-            // =================================================
-            // info
-            // =================================================
-
-            if (action == "info") {
+            else if (command.action == "info") {
                 if (command.arguments.size() != 1) {
                     throw std::invalid_argument(
-                        "Usage: info <path>"
+                        "Usage: info <file>"
                     );
                 }
 
                 file_manager.show_info(
                     command.arguments[0]
                 );
-
-                continue;
             }
 
-            // =================================================
-            // tree
-            // =================================================
-
-            if (action == "tree") {
-
-                if (command.arguments.size() > 1) {
+            else if (command.action == "tree") {
+                if (
+                    command.arguments.size() > 1
+                ) {
                     throw std::invalid_argument(
                         "Usage: tree [path]"
                     );
@@ -487,15 +357,9 @@ int main() {
                         command.arguments[0]
                     );
                 }
-
-                continue;
             }
 
-            // =================================================
-            // du
-            // =================================================
-
-            if (action == "du") {
+            else if (command.action == "du") {
                 if (command.arguments.size() != 1) {
                     throw std::invalid_argument(
                         "Usage: du <path>"
@@ -505,18 +369,11 @@ int main() {
                 file_manager.show_directory_size(
                     command.arguments[0]
                 );
-
-                continue;
             }
 
-            // =================================================
-            // find
-            // =================================================
-
-            if (action == "find") {
-
+            else if (command.action == "find") {
                 if (
-                    command.arguments.empty()
+                    command.arguments.size() < 1
                     || command.arguments.size() > 2
                 ) {
                     throw std::invalid_argument(
@@ -535,18 +392,11 @@ int main() {
                         command.arguments[1]
                     );
                 }
-
-                continue;
             }
 
-            // =================================================
-            // findext
-            // =================================================
-
-            if (action == "findext") {
-
+            else if (command.action == "findext") {
                 if (
-                    command.arguments.empty()
+                    command.arguments.size() < 1
                     || command.arguments.size() > 2
                 ) {
                     throw std::invalid_argument(
@@ -565,16 +415,9 @@ int main() {
                         command.arguments[1]
                     );
                 }
-
-                continue;
             }
 
-            // =================================================
-            // findsize
-            // =================================================
-
-            if (action == "findsize") {
-
+            else if (command.action == "findsize") {
                 if (
                     command.arguments.size() < 1
                     || command.arguments.size() > 2
@@ -584,15 +427,13 @@ int main() {
                     );
                 }
 
-                const std::string& size_text =
-                    command.arguments[0];
-
                 if (
-                    !is_unsigned_integer(size_text)
+                    !is_unsigned_integer(
+                        command.arguments[0]
+                    )
                 ) {
                     throw std::invalid_argument(
-                        "Minimum size must be a "
-                        "non-negative integer."
+                        "Minimum size must be a non-negative integer."
                     );
                 }
 
@@ -601,12 +442,12 @@ int main() {
                 try {
                     minimum_size =
                         std::stoull(
-                            size_text
+                            command.arguments[0]
                         );
                 }
                 catch (...) {
                     throw std::invalid_argument(
-                        "Invalid size value."
+                        "Minimum size is too large."
                     );
                 }
 
@@ -621,15 +462,9 @@ int main() {
                         command.arguments[1]
                     );
                 }
-
-                continue;
             }
 
-            // =================================================
-            // perm
-            // =================================================
-
-            if (action == "perm") {
+            else if (command.action == "perm") {
                 if (command.arguments.size() != 1) {
                     throw std::invalid_argument(
                         "Usage: perm <path>"
@@ -639,15 +474,9 @@ int main() {
                 file_manager.show_permissions(
                     command.arguments[0]
                 );
-
-                continue;
             }
 
-            // =================================================
-            // chmod
-            // =================================================
-
-            if (action == "chmod") {
+            else if (command.action == "chmod") {
                 if (command.arguments.size() != 2) {
                     throw std::invalid_argument(
                         "Usage: chmod <mode> <path>"
@@ -658,38 +487,10 @@ int main() {
                     command.arguments[0],
                     command.arguments[1]
                 );
-
-                continue;
             }
 
-            // =================================================
-            // link
-            // =================================================
-
-            if (action == "link") {
-                if (command.arguments.size() != 2) {
-                    throw std::invalid_argument(
-                        "Usage: link <target> <link>"
-                    );
-                }
-
-                file_manager.create_hard_link(
-                    command.arguments[0],
-                    command.arguments[1]
-                );
-
-                continue;
-            }
-
-            // =================================================
-            // ln
-            // =================================================
-
-            if (action == "ln") {
-
-                if (
-                    command.arguments.size() == 2
-                ) {
+            else if (command.action == "ln") {
+                if (command.arguments.size() == 2) {
                     file_manager.create_hard_link(
                         command.arguments[0],
                         command.arguments[1]
@@ -706,20 +507,13 @@ int main() {
                 }
                 else {
                     throw std::invalid_argument(
-                        "Usage:\n"
-                        "  ln <target> <link>\n"
-                        "  ln -s <target> <link>"
+                        "Usage: ln <target> <link> "
+                        "or ln -s <target> <link>"
                     );
                 }
-
-                continue;
             }
 
-            // =================================================
-            // readlink
-            // =================================================
-
-            if (action == "readlink") {
+            else if (command.action == "readlink") {
                 if (command.arguments.size() != 1) {
                     throw std::invalid_argument(
                         "Usage: readlink <path>"
@@ -729,45 +523,49 @@ int main() {
                 file_manager.show_link_target(
                     command.arguments[0]
                 );
-
-                continue;
             }
 
-            // =================================================
-            // Unknown command
-            // =================================================
+            else {
+                std::cout
+                    << "Unknown command: "
+                    << command.action
+                    << "\n";
 
-            std::cout
-                << "Unknown command: "
-                << action
-                << '\n'
-                << "Type 'help' to see available commands.\n";
+                std::cout
+                    << "Type 'help' for available commands.\n";
+            }
         }
-        catch (const std::invalid_argument& error) {
+        catch (const std::invalid_argument& exception) {
             std::cout
                 << "Error: "
-                << error.what()
-                << '\n';
+                << exception.what()
+                << "\n";
         }
-        catch (const fs::filesystem_error& error) {
+        catch (const fs::filesystem_error& exception) {
             std::cout
                 << "Filesystem error: "
-                << error.what()
-                << '\n';
+                << exception.what()
+                << "\n";
         }
-        catch (const std::runtime_error& error) {
+        catch (const std::runtime_error& exception) {
             std::cout
                 << "Error: "
-                << error.what()
-                << '\n';
+                << exception.what()
+                << "\n";
         }
-        catch (const std::exception& error) {
+        catch (const std::exception& exception) {
             std::cout
                 << "Unexpected error: "
-                << error.what()
-                << '\n';
+                << exception.what()
+                << "\n";
         }
     }
+}
+
+int main() {
+    FileManager file_manager;
+
+    run_command_mode(file_manager);
 
     return 0;
 }

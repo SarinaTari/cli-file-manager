@@ -12,10 +12,7 @@ std::vector<std::string> CommandParser::tokenize(
     char quote = '\0';
 
     for (char character : input) {
-
-        // Start or end a quoted section.
         if (character == '"' || character == '\'') {
-
             if (quote == '\0') {
                 quote = character;
             }
@@ -29,7 +26,6 @@ std::vector<std::string> CommandParser::tokenize(
             continue;
         }
 
-        // Whitespace separates arguments outside quotes.
         if (
             std::isspace(static_cast<unsigned char>(character))
             && quote == '\0'
@@ -44,7 +40,6 @@ std::vector<std::string> CommandParser::tokenize(
         }
     }
 
-    // A quote was opened but never closed.
     if (quote != '\0') {
         throw std::invalid_argument(
             "Unmatched quote in command."

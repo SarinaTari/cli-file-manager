@@ -13,7 +13,6 @@ private:
 public:
     FileManager();
 
-    // Navigation
     void list_directory(
         bool show_hidden = false,
         const std::string& sort_option = "name",
@@ -21,37 +20,40 @@ public:
     ) const;
 
     void print_working_directory() const;
+
+    fs::path get_current_directory() const;
+
     void change_directory(const std::string& name);
     void go_back();
 
-    // Basic filesystem operations
     void make_directory(const std::string& name);
     void create_file(const std::string& name);
+
     void rename_item(
         const std::string& old_name,
         const std::string& new_name
     );
+
     void copy_item(
         const std::string& source,
         const std::string& destination
     );
+
     void move_item(
         const std::string& source,
         const std::string& destination
     );
+
     void remove_item(const std::string& name);
 
-    // File information
     void show_file_size(const std::string& name) const;
     void show_file_type(const std::string& name) const;
     void show_modified_time(const std::string& name) const;
     void show_info(const std::string& name) const;
 
-    // Recursive operations
     void show_tree(const std::string& name = ".") const;
     void show_directory_size(const std::string& name) const;
 
-    // Search
     void find_by_name(
         const std::string& name,
         const std::string& path = "."
@@ -67,7 +69,6 @@ public:
         const std::string& path = "."
     ) const;
 
-    // Unix features
     void show_permissions(const std::string& name) const;
 
     void change_permissions(
@@ -109,7 +110,6 @@ private:
         const fs::path& path
     ) const;
 
-    // Phase 9 safety helpers
     void ensure_exists(
         const fs::path& path,
         const std::string& description

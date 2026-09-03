@@ -9,6 +9,7 @@ add_executable(filemanager
     src/main.cpp
     src/FileManager.cpp
     src/CommandParser.cpp
+    src/TerminalUI.cpp
 )
 
 target_include_directories(filemanager PRIVATE

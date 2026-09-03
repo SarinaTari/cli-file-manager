@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 set -u
 
-PROGRAM="$1"
+PROGRAM="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 
 if [ ! -x "$PROGRAM" ]; then
     echo "ERROR: Program does not exist or is not executable:"

@@ -1,83 +1,64 @@
 # CLI File Manager
 
-A developer-oriented Unix CLI file manager written in C++17.
+A developer-oriented Unix CLI file manager written in **C++17**.
 
-The project is being developed progressively from a simple command-line filesystem navigator into a robust, safe, intelligent developer-focused file management tool.
+The project started as a simple command-line filesystem program and is being developed progressively into a safer, more powerful, and more intelligent terminal-based file manager.
 
-## Features
+The goal is not simply to recreate `ls`, `cp`, `mv`, and `rm`, but to build a portfolio-quality systems project that demonstrates practical knowledge of:
 
-### Navigation
-
-* Print current directory
-* Change directories
-* Move to parent directory
-* Resolve relative and absolute paths
-
-### File Operations
-
-* Create files
-* Create directories
-* Rename files and directories
-* Copy files and directories
-* Move files and directories
-* Delete files and directories
-
-### File Information
-
-* File size
-* File type
-* Modification time
-* Complete file information
-* Unix permissions
-* Symbolic-link targets
-
-### Recursive Operations
-
-* Recursive directory tree
-* Recursive directory size calculation
-* Recursive file search
-
-### Search
-
-* Search by name
-* Search by extension
-* Search by minimum file size
-
-### Unix Filesystem Features
-
-* Read Unix permissions
-* Change permissions with `chmod`
-* Create hard links
-* Create symbolic links
-* Read symbolic-link targets
-
-### Safety
-
-* Prevent accidental overwrites
-* Confirm recursive directory deletion
-* Prevent deletion of the current directory
-* Prevent deletion of dangerous paths
-* Prevent copying directories into themselves
-* Prevent moving directories into themselves
-* Validate command arguments
-* Detect unmatched quotes
-* Gracefully handle filesystem errors
-
-### Testing
-
-* Automated integration tests
-* CTest integration
-* Regression testing
-* Filesystem behavior testing
-* Safety testing
-* Error-handling testing
-* Temporary test environments
+* C++
+* Object-oriented programming
+* C++17 `std::filesystem`
+* Unix/Linux filesystem concepts
+* File permissions
+* Hard and symbolic links
+* Recursive filesystem operations
+* Command parsing
+* Error handling
+* Defensive programming
+* Automated testing
+* CMake
+* Terminal UI development
+* Git and GitHub
 
 ---
 
-# Command Reference
+## Current Status
 
-## Navigation
+**Phase 11 / 15 — Interactive Terminal UI**
+
+The project currently supports:
+
+* Directory navigation
+* File and directory creation
+* Rename
+* Copy
+* Move
+* Safe deletion
+* File metadata
+* Recursive directory trees
+* Directory size calculation
+* Recursive searching
+* Extension searching
+* Size-based searching
+* Unix permissions
+* Permission modification
+* Hard links
+* Symbolic links
+* Link target inspection
+* Robust error handling
+* Filesystem safety checks
+* Automated integration testing
+* CTest integration
+* Interactive terminal UI
+
+---
+
+# Features
+
+## 1. Directory Navigation
+
+Navigate through the filesystem without leaving the application.
 
 ```text
 pwd
@@ -85,7 +66,13 @@ cd <directory>
 back
 ```
 
-## Listing
+The program maintains its own current working directory.
+
+---
+
+## 2. Directory Listing
+
+List files and directories with different options.
 
 ```text
 ls
@@ -98,7 +85,20 @@ ls --name-desc
 ls --size-desc
 ```
 
-## File Operations
+Supported functionality includes:
+
+* Hidden files
+* Files-only filtering
+* Directories-only filtering
+* Name sorting
+* Size sorting
+* Ascending and descending order
+
+---
+
+## 3. File Operations
+
+Create and manipulate filesystem objects.
 
 ```text
 mkdir <name>
@@ -109,40 +109,115 @@ mv <source> <destination>
 rm <name>
 ```
 
-## File Information
+---
+
+## 4. File Information
+
+Inspect filesystem metadata.
 
 ```text
-size <file>
-type <file>
-modified <file>
-info <file>
+info <path>
 ```
 
-## Recursive Operations
+The information system can display information such as:
+
+* File name
+* File type
+* File size
+* Modification time
+* Permissions
+* Other filesystem metadata
+
+Individual metadata commands are also available:
+
+```text
+size <path>
+type <path>
+modified <path>
+```
+
+---
+
+## 5. Recursive Filesystem Operations
+
+The file manager can recursively inspect directories.
+
+### Tree
 
 ```text
 tree
 tree <path>
+```
+
+Example:
+
+```text
+project/
+├── include/
+│   ├── FileManager.h
+│   └── CommandParser.h
+├── src/
+│   ├── FileManager.cpp
+│   └── main.cpp
+└── CMakeLists.txt
+```
+
+### Directory Size
+
+```text
 du <path>
 ```
 
-## Search
+The program recursively calculates directory storage usage.
+
+---
+
+# 6. Search
+
+The file manager supports recursive searching.
+
+### Search by name
 
 ```text
 find <name>
 find <name> <path>
+```
 
+### Search by extension
+
+```text
 findext <extension>
 findext <extension> <path>
+```
 
+### Search by minimum size
+
+```text
 findsize <minimum_bytes>
 findsize <minimum_bytes> <path>
 ```
 
-## Permissions
+---
+
+# 7. Unix Permissions
+
+Inspect and modify Unix permissions.
+
+### View permissions
 
 ```text
 perm <path>
+```
+
+Example:
+
+```text
+-rwxr-xr--
+```
+
+### Change permissions
+
+```text
 chmod <mode> <path>
 ```
 
@@ -152,215 +227,237 @@ Example:
 chmod 755 script.sh
 ```
 
-## Links
+The application validates permission modes before attempting to modify them.
 
-Create a hard link:
+---
+
+# 8. Hard Links and Symbolic Links
+
+The project also demonstrates Unix filesystem links.
+
+### Create a hard link
+
+```text
+link <target> <link>
+```
+
+or:
 
 ```text
 ln <target> <link>
 ```
 
-Create a symbolic link:
+### Create a symbolic link
 
 ```text
 ln -s <target> <link>
 ```
 
-Read a symbolic link:
+### Inspect a symbolic link
 
 ```text
 readlink <path>
 ```
 
-## Help and Exit
-
-```text
-help
-q
-quit
-exit
-```
-
 ---
 
-# Architecture
+# 9. Command Parsing
 
-The application follows a layered structure:
-
-```text
-User
- │
- ▼
-main.cpp
- │
- ▼
-CommandParser
- │
- ▼
-FileManager
- │
- ▼
-C++ std::filesystem / POSIX APIs
- │
- ▼
-Operating System
-```
-
-### `main.cpp`
-
-Responsible for:
-
-* Reading user input
-* Calling the command parser
-* Validating command arguments
-* Dispatching commands
-* Handling exceptions
-* Running the main application loop
-
-### `CommandParser`
-
-Responsible for:
-
-* Tokenizing command input
-* Handling quoted arguments
-* Separating commands from arguments
-* Detecting unmatched quotes
-
-### `FileManager`
-
-Responsible for:
-
-* Directory navigation
-* File operations
-* Metadata
-* Recursive operations
-* Searching
-* Permissions
-* Links
-* Safety validation
-
----
-
-# Error Handling
-
-The application uses centralized exception handling.
-
-The general flow is:
-
-```text
-User Input
-    ↓
-Command Parser
-    ↓
-Argument Validation
-    ↓
-FileManager
-    ↓
-Filesystem Operation
-    ↓
-Exception?
-   / \
- Yes  No
-  ↓    ↓
-Error  Success
-Message
-```
-
-Errors should not terminate the entire application unnecessarily.
+Commands are parsed separately from filesystem operations.
 
 For example:
 
 ```text
-> info missing.txt
-
-Error: Path does not exist: missing.txt
-
->
+rename "old file.txt" "new file.txt"
 ```
 
-The program remains running.
+The command parser handles:
+
+* Commands
+* Arguments
+* Whitespace
+* Single quotes
+* Double quotes
+* Quoted paths containing spaces
+* Invalid/unmatched quotes
+
+This separates input parsing from filesystem logic.
 
 ---
 
-# Testing
+# 10. Error Handling
 
-Phase 10 introduces automated integration testing.
+Filesystem operations can fail for many reasons.
 
-The tests execute the real application against a temporary filesystem.
+Examples include:
 
-The testing flow is:
+* File does not exist
+* Directory does not exist
+* Permission denied
+* Destination already exists
+* Invalid path
+* Invalid command
+* Invalid permission mode
+* Invalid numeric argument
+
+The application catches exceptions and reports meaningful errors instead of terminating unexpectedly.
+
+Example:
 
 ```text
-Test Script
-     ↓
-CLI Application
-     ↓
-CommandParser
-     ↓
-FileManager
-     ↓
-Temporary Filesystem
+Error: Item does not exist.
 ```
-
-Tests cover:
-
-* Navigation
-* File creation
-* Directory creation
-* Quoted paths
-* Rename
-* Copy
-* Move
-* File information
-* Search
-* Permissions
-* `chmod`
-* Hard links
-* Symbolic links
-* `tree`
-* `du`
-* Invalid arguments
-* Missing files
-* Overwrite protection
-* Invalid permissions
-* Invalid search sizes
-* Unmatched quotes
-* Dangerous deletion
-* Recursive deletion
-* Copying directories into themselves
-* Moving directories into themselves
 
 ---
 
-# Running Tests
+# 11. Filesystem Safety
 
-Build the project:
+Destructive filesystem operations are treated carefully.
 
-```bash
-cmake -S . -B build
-cmake --build build
+The application includes safety checks for operations such as:
+
+```text
+rm
+mv
+cp
+rename
 ```
 
-Run all tests:
+Protection includes checks against:
+
+* Dangerous filesystem paths
+* Invalid destinations
+* Copying/moving a directory into itself
+* Conflicting destinations
+* Invalid filesystem operations
+
+Recursive deletion requires an explicit confirmation.
+
+This is an intentional design decision because filesystem applications can cause irreversible damage if destructive operations are implemented carelessly.
+
+---
+
+# 12. Automated Testing
+
+The project includes automated integration tests.
+
+Tests are executed through **CTest**.
+
+Run:
 
 ```bash
 ctest --test-dir build --output-on-failure
 ```
 
-Or run the integration test directly:
+The tests verify important application behavior including:
 
-```bash
-./tests/test_cli.sh ./build/filemanager
-```
+* Navigation
+* File creation
+* Directory creation
+* Rename
+* Copy
+* Move
+* Delete
+* Search
+* Permissions
+* Links
+* Error handling
+* Quoted paths
 
-A successful test run should end with:
+Testing is an important part of the project because filesystem programs need to be reliable before adding more advanced functionality.
+
+---
+
+# 13. Interactive Terminal UI
+
+Phase 11 introduces an interactive terminal interface.
+
+The UI displays:
+
+* Current directory
+* Directory contents
+* Selected item
+* File type
+* File size
+* Keyboard controls
+* Command input
+* Status messages
+
+Basic navigation:
 
 ```text
-Passed: ...
-Failed: 0
-
-ALL TESTS PASSED
+↑ / ↓     Move selection
+Enter     Open directory
+h         Go back
+:         Enter command mode
+q         Quit
 ```
+
+The goal of the UI is to eventually provide a terminal experience similar in spirit to applications such as `ranger` or `nnn`, while keeping the implementation educational and custom-built.
+
+---
+
+# Architecture
+
+The current architecture is conceptually:
+
+```text
+                 User
+                  │
+                  ▼
+            Terminal UI
+                  │
+                  ▼
+           Command Parser
+                  │
+                  ▼
+            File Manager
+                  │
+                  ▼
+       C++17 std::filesystem
+                  │
+                  ▼
+              Unix OS
+```
+
+### Terminal UI
+
+Responsible for:
+
+* Display
+* Selection
+* Keyboard input
+* Interactive navigation
+* User feedback
+
+### Command Parser
+
+Responsible for converting:
+
+```text
+rename "old file.txt" "new file.txt"
+```
+
+into structured command data.
+
+### File Manager
+
+Responsible for:
+
+* Filesystem operations
+* Navigation
+* Searching
+* Metadata
+* Permissions
+* Links
+* Safety checks
+* Error handling
+
+### `std::filesystem`
+
+Provides the main C++17 filesystem abstraction.
+
+The project also uses POSIX functionality where appropriate for Unix-specific features such as permissions and links.
 
 ---
 
@@ -375,64 +472,74 @@ cli-file-manager/
 │
 ├── include/
 │   ├── CommandParser.h
-│   └── FileManager.h
+│   ├── FileManager.h
+│   └── TerminalUI.h
 │
 ├── src/
 │   ├── main.cpp
+│   ├── CommandParser.cpp
 │   ├── FileManager.cpp
-│   └── CommandParser.cpp
+│   └── TerminalUI.cpp
 │
-├── tests/
-│   └── test_cli.sh
-│
-└── build/
+└── tests/
+    └── test_cli.sh
 ```
-
----
-
-# Technologies
-
-* C++17
-* C++ Standard Library
-* `std::filesystem`
-* POSIX filesystem APIs
-* CMake
-* Bash
-* CTest
-* Git
-* GitHub
-* Unix/macOS/Linux concepts
 
 ---
 
 # Building
 
-Clone the repository:
+## Requirements
 
-```bash
-git clone https://github.com/SarinaTari/cli-file-manager.git
-cd cli-file-manager
-```
+* C++17-compatible compiler
+* CMake
+* Unix-like operating system
+* Bash
 
-Configure:
+The project is primarily designed for:
+
+* macOS
+* Linux
+
+---
+
+## Build
+
+From the project directory:
 
 ```bash
 cmake -S . -B build
 ```
 
-Build:
+Then:
 
 ```bash
 cmake --build build
 ```
 
-Run:
+---
+
+# Running
+
+Run the executable with:
 
 ```bash
 ./build/filemanager
 ```
 
-Run tests:
+The interactive terminal UI will start.
+
+---
+
+# Running Tests
+
+Build the project first:
+
+```bash
+cmake --build build
+```
+
+Then run:
 
 ```bash
 ctest --test-dir build --output-on-failure
@@ -440,101 +547,327 @@ ctest --test-dir build --output-on-failure
 
 ---
 
-# Development Phases
+# Example Session
 
 ```text
-Phase 0  → Project Setup
-Phase 1  → Basic Navigation
-Phase 2  → File Operations
-Phase 3  → File Metadata
-Phase 4  → Architecture & Refactoring
-Phase 5  → Recursive Filesystem Operations
-Phase 6  → Advanced Parsing & Path Handling
-Phase 7  → Search, Sorting & Filtering
-Phase 8  → Unix Permissions & Links
-Phase 9  → Robust Error Handling & Safety
-Phase 10 → Testing & Quality
-Phase 11 → Interactive Terminal UI
-Phase 12 → Advanced File Manager Features
-Phase 13 → Developer & Project Intelligence
-Phase 14 → History, Undo & Snapshots
-Phase 15 → Performance, Reliability & Portfolio Release
+CLI FILE MANAGER
+
+Current directory:
+/Users/user/projects
+
+> [DIR]  cli-file-manager/
+  [DIR]  documents/
+  [FILE] README.md
+  [FILE] notes.txt
+
+↑ ↓ Navigate
+Enter Open
+h Back
+: Command
+q Quit
+```
+
+Command mode can be used with:
+
+```text
+: mkdir test
+```
+
+or:
+
+```text
+: find main.cpp
 ```
 
 ---
 
-# Phase 10 Concepts
+# Technologies
 
-This phase focuses on:
+## Language
 
-* Automated testing
-* Integration testing
-* Regression testing
-* Test isolation
-* Temporary test environments
+**C++17**
+
+Important concepts used:
+
+* Classes
+* References
+* Exceptions
+* STL containers
+* Strings
+* Streams
+* Algorithms
+* `std::filesystem`
+* Lambda expressions
+* RAII concepts
+
+## Filesystem
+
+* C++17 `std::filesystem`
+* Unix filesystem concepts
+* POSIX permissions
+* Hard links
+* Symbolic links
+
+## Build System
+
+**CMake**
+
+## Testing
+
+**CTest**
+
+## Version Control
+
+**Git**
+
+## Platform
+
+Unix-oriented development with primary testing on macOS/Linux.
+
+---
+
+# Development Phases
+
+The project is being developed progressively.
+
+### Phase 0 — Setup
+
+* Project structure
+* Compiler
+* CMake
+* Git
+
+### Phase 1 — Basic Navigation
+
+* Current directory
+* Directory listing
+* `pwd`
+* `cd`
+* `back`
+
+### Phase 2 — File Operations
+
+* Create files
+* Create directories
+* Rename
+* Copy
+* Move
+* Delete
+
+### Phase 3 — File Metadata
+
+* Size
+* Type
+* Modification time
+* File information
+
+### Phase 4 — Architecture
+
+* Header/source separation
+* Command parser
+* Cleaner class design
+* Separation of responsibilities
+
+### Phase 5 — Recursive Filesystem
+
+* Tree
+* Recursive directory size
+
+### Phase 6 — Advanced Parsing and Paths
+
+* Quoted arguments
+* Better path handling
+* Path resolution
+
+### Phase 7 — Search and Filtering
+
+* Name search
+* Extension search
+* Size search
+* Sorting
+* Filtering
+
+### Phase 8 — Unix Filesystem Features
+
+* Permissions
+* `chmod`
+* Hard links
+* Symbolic links
+* Link inspection
+
+### Phase 9 — Safety and Error Handling
+
+* Exception handling
+* Validation
+* Dangerous path protection
+* Recursive deletion confirmation
+* Safe filesystem operations
+
+### Phase 10 — Testing
+
+* Integration tests
 * CTest
-* Bash scripting
-* Assertions
-* Exit codes
-* Continuous validation
-* Software reliability
+* Automated regression testing
+
+### Phase 11 — Interactive Terminal UI
+
+* Interactive interface
+* File selection
+* Keyboard navigation
+* Directory browsing
+* Command mode
+* Status messages
+
+### Phase 12 — Advanced File Manager
+
+Planned:
+
+* Storage analyzer
+* Duplicate detection
+* File hashing
+* Better filtering
+* File statistics
+
+### Phase 13 — Developer Intelligence
+
+Planned:
+
+* Project detection
+* Git awareness
+* CMake detection
+* Python project detection
+* Node.js project detection
+* Dependency/project information
+
+### Phase 14 — History and Recovery
+
+Planned:
+
+* Operation history
+* Undo
+* Snapshots
+* Filesystem change tracking
+
+### Phase 15 — Performance and Release
+
+Planned:
+
+* Performance optimization
+* Large-directory handling
+* Better terminal rendering
+* Reliability improvements
+* Final documentation
+* Portfolio release
 
 ---
 
 # Design Philosophy
 
-The project is intentionally developed incrementally.
+The project follows several principles.
 
-Each phase introduces a new engineering concept while preserving the functionality of previous phases.
+## Safety First
 
-The goal is not simply to make a program that works once.
+Filesystem applications can cause irreversible data loss.
 
-The goal is to make a program that:
+Destructive operations should therefore:
 
-* Works correctly
-* Handles errors
-* Protects the user
-* Can be tested automatically
-* Can be extended safely
-* Has clear architecture
-* Demonstrates real systems programming skills
+1. Validate the path.
+2. Validate the operation.
+3. Check dangerous cases.
+4. Ask for confirmation when necessary.
+5. Only then perform the operation.
 
 ---
 
-# Long-Term Goal
+## Separation of Responsibilities
 
-The final project is intended to become a developer-oriented Unix file manager rather than a generic file browser.
+The project avoids putting everything inside `main.cpp`.
 
-Planned advanced capabilities include:
+Instead:
+
+```text
+main.cpp
+    ↓
+TerminalUI / command interface
+    ↓
+CommandParser
+    ↓
+FileManager
+    ↓
+Filesystem / POSIX
+```
+
+This makes the project easier to:
+
+* Understand
+* Test
+* Extend
+* Debug
+* Maintain
+
+---
+
+# Long-Term Vision
+
+The final goal is to build more than a basic file manager.
+
+The project is intended to become a **developer-oriented Unix file management environment**.
+
+Future capabilities may include:
+
+```text
+Filesystem
+    │
+    ├── Navigation
+    ├── Search
+    ├── File operations
+    ├── Permissions
+    ├── Links
+    ├── Storage analysis
+    └── Duplicate detection
+          │
+          ▼
+Developer Intelligence
+    │
+    ├── Git detection
+    ├── Project detection
+    ├── Build system detection
+    ├── Dependency analysis
+    └── Project statistics
+          │
+          ▼
+Safety & Recovery
+    │
+    ├── History
+    ├── Undo
+    └── Snapshots
+```
+
+This gives the project a stronger identity than a basic CRUD-style file manager.
+
+---
+
+# Portfolio Description
+
+A concise description for GitHub/LinkedIn:
+
+> **Developer-oriented Unix CLI file manager written in C++17, featuring filesystem navigation and operations, recursive search, Unix permissions and links, defensive filesystem safety, automated integration testing, and an interactive terminal UI.**
+
+As the later phases are completed, the project will additionally include:
 
 * Intelligent project detection
 * Git awareness
 * Storage analysis
-* Duplicate-file detection
-* Developer project analysis
-* C++ include/dependency analysis
-* Safe deletion workflows
+* Duplicate detection
 * Operation history
 * Undo
-* Filesystem snapshots
-* Snapshot comparison
-* Interactive terminal UI
-* Performance optimization
+* Snapshots
+* Advanced terminal UI
 
 ---
 
-# Project Vision
+# Current Goal
 
-The final goal is to be able to describe the project as:
+**Phase 11 — Interactive Terminal UI**
 
-> I built a Unix-oriented developer file manager in C++17 with recursive filesystem operations, permissions and links, intelligent project detection, Git awareness, duplicate detection, safe deletion, operation history, undo, snapshots, and an interactive terminal UI.
-
----
-
-# Current Status
-
-**Phase 10 / 15 — Testing & Quality**
-
-The project now includes automated integration testing and regression testing through CTest.
-
-The next major stage is **Phase 11 — Interactive Terminal UI**, where the project will evolve from a command-driven file manager into a more powerful interactive terminal application.
+The current focus is transforming the underlying command-line filesystem engine into a more usable interactive terminal application while maintaining the reliability and safety developed in previous phases.
