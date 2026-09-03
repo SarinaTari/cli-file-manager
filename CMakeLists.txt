@@ -14,3 +14,10 @@ add_executable(filemanager
 target_include_directories(filemanager PRIVATE
     include
 )
+
+enable_testing()
+
+add_test(
+    NAME cli_file_manager_integration
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cli.sh $<TARGET_FILE:filemanager>
+)
