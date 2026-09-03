@@ -13,15 +13,21 @@ std::vector<std::string> CommandParser::tokenize(
 
     for (char character : input) {
 
-        if ((character == '"' || character == '\'') && !inside_quotes) {
+        if ((character == '"' || character == '\'') &&
+            !inside_quotes) {
+
             inside_quotes = true;
             quote_character = character;
+
             continue;
         }
 
-        if (inside_quotes && character == quote_character) {
+        if (inside_quotes &&
+            character == quote_character) {
+
             inside_quotes = false;
             quote_character = '\0';
+
             continue;
         }
 
@@ -47,10 +53,13 @@ std::vector<std::string> CommandParser::tokenize(
     return tokens;
 }
 
-Command CommandParser::parse(const std::string& input) {
+Command CommandParser::parse(
+    const std::string& input
+) {
     Command command;
 
-    std::vector<std::string> tokens = tokenize(input);
+    std::vector<std::string> tokens =
+        tokenize(input);
 
     if (tokens.empty()) {
         return command;
@@ -58,7 +67,10 @@ Command CommandParser::parse(const std::string& input) {
 
     command.action = tokens[0];
 
-    for (std::size_t i = 1; i < tokens.size(); ++i) {
+    for (std::size_t i = 1;
+         i < tokens.size();
+         ++i) {
+
         command.arguments.push_back(tokens[i]);
     }
 

@@ -5,6 +5,8 @@
 *.o
 *.out
 *.exe
+*.swp
+*.swo
 
 # IDE/editor files
 .vscode/

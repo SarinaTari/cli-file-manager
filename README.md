@@ -1,8 +1,8 @@
 # CLI File Manager
 
-A command-line file manager written in C++ using `std::filesystem`.
+A modular command-line file manager written in C++17.
 
-The project is being developed progressively to demonstrate practical C++ programming, filesystem operations, command parsing, software architecture, error handling, and Git/GitHub workflow.
+The project is being developed progressively to demonstrate practical C++ programming, filesystem manipulation, command parsing, recursion, sorting, searching, error handling, CMake, and software architecture.
 
 ## Features
 
@@ -11,7 +11,9 @@ The project is being developed progressively to demonstrate practical C++ progra
 * List directory contents
 * Show current working directory
 * Change directories
-* Navigate to parent directories
+* Navigate to the parent directory
+* Support relative and absolute paths
+* Support `.` and `..`
 
 ### File Operations
 
@@ -20,14 +22,14 @@ The project is being developed progressively to demonstrate practical C++ progra
 * Rename files and directories
 * Copy files and directories
 * Move files and directories
-* Remove files and directories
+* Remove files and directories recursively
 
 ### File Information
 
 * Show file size
-* Identify file types
+* Show file type
 * Show modification time
-* Display detailed file information
+* Show detailed information about an item
 
 ### Recursive Operations
 
@@ -36,15 +38,25 @@ The project is being developed progressively to demonstrate practical C++ progra
 * Recursively copy directories
 * Recursively remove directories
 
+### Search and Filtering
+
+* Search for files and directories by name
+* Search recursively
+* Search by file extension
+* Search by minimum file size
+* Filter directory listings to files or directories
+
+### Sorting
+
+* Sort directory contents by name
+* Sort directory contents by size
+* Sort in ascending or descending order
+
 ### Command Parsing
 
-* Command tokenization
-* Quoted arguments
-* File and directory names containing spaces
-* Relative paths
-* Absolute paths
-* Path normalization
-* Improved argument validation
+* Parse commands and arguments
+* Support quoted paths containing spaces
+* Support both single and double quotes
 
 ## Example
 
@@ -54,12 +66,19 @@ CLI File Manager
 Type 'help' for available commands.
 
 > pwd
-"/Users/mym1/Documents/Projects/cli-file-manager"
+/Users/example/projects/cli-file-manager
 
-> mkdir "My Projects"
-Directory created: My Projects
+> ls
+CMakeLists.txt
+README.md
+include/
+src/
+tests/
 
-> cd "My Projects"
+> mkdir "My Folder"
+Directory created: My Folder
+
+> cd "My Folder"
 
 > touch "hello world.txt"
 File created: hello world.txt
@@ -69,11 +88,15 @@ hello world.txt  [0 bytes]
 
 > info "hello world.txt"
 Name: hello world.txt
-Path: ".../My Projects/hello world.txt"
+Path: /Users/example/projects/cli-file-manager/My Folder/hello world.txt
 Type: regular file
 Size: 0 bytes
+Modified: 2026-09-03 10:30:00
 
 > cd ..
+
+> find "hello world.txt"
+"/Users/example/projects/cli-file-manager/My Folder/hello world.txt"
 ```
 
 ## Commands
@@ -82,6 +105,13 @@ Size: 0 bytes
 
 ```text
 ls
+ls --files
+ls --dirs
+ls --name
+ls --size
+ls --name-desc
+ls --size-desc
+
 pwd
 cd <directory>
 back
@@ -114,6 +144,14 @@ tree [path]
 du <path>
 ```
 
+### Search
+
+```text
+find <name> [path]
+findext <extension> [path]
+findsize <minimum_bytes> [path]
+```
+
 ### Other
 
 ```text
@@ -124,55 +162,57 @@ quit
 
 ## Quoted Paths
 
-Paths containing spaces can be written using quotes:
+The command parser supports paths containing spaces.
+
+For example:
 
 ```text
+mkdir "My Folder"
 cd "My Folder"
-```
-
-```text
 touch "hello world.txt"
-```
-
-```text
-rename "old file.txt" "new file.txt"
+find "hello world.txt"
 ```
 
 Both single and double quotes are supported:
 
 ```text
 touch 'hello world.txt'
+touch "hello world.txt"
 ```
 
 ## Path Handling
 
 The file manager supports:
 
-### Relative paths
+* Relative paths
 
 ```text
-cd photos
-cd photos/vacation
-cd ..
+cd src
 ```
 
-### Absolute paths
+* Absolute paths
 
 ```text
-cd /Users/mym1/Documents
+cd /Users/example/Documents
 ```
 
-### Current directory
+* Current directory
 
 ```text
 tree .
+```
+
+* Parent directory
+
+```text
+cd ..
 ```
 
 Paths are normalized using `std::filesystem::path::lexically_normal()`.
 
 ## Architecture
 
-The project follows a simple layered architecture:
+The project separates command parsing from filesystem operations.
 
 ```text
 User
@@ -192,33 +232,36 @@ Operating System
 
 Responsible for:
 
-* Running the command loop
+* Running the main command loop
 * Receiving user input
-* Dispatching commands
-* Validating argument counts
+* Calling `CommandParser`
+* Validating command arguments
+* Calling the appropriate `FileManager` function
 
 ### `CommandParser`
 
 Responsible for:
 
-* Tokenizing user input
+* Splitting input into tokens
+* Identifying the command
+* Identifying arguments
 * Handling quoted arguments
-* Separating commands from arguments
 
 ### `FileManager`
 
 Responsible for:
 
-* Filesystem operations
 * Directory navigation
+* File operations
 * Metadata
 * Recursive operations
+* Searching
+* Sorting
 * Path resolution
-* Error handling
 
 ### `std::filesystem`
 
-Provides the C++ interface to the underlying filesystem.
+Provides the interface used to communicate with the operating system's filesystem.
 
 ## Project Structure
 
@@ -227,12 +270,12 @@ cli-file-manager/
 ├── build/
 ├── docs/
 ├── include/
-│   ├── CommandParser.h
-│   └── FileManager.h
+│   ├── FileManager.h
+│   └── CommandParser.h
 ├── src/
-│   ├── CommandParser.cpp
+│   ├── main.cpp
 │   ├── FileManager.cpp
-│   └── main.cpp
+│   └── CommandParser.cpp
 ├── tests/
 ├── CMakeLists.txt
 ├── README.md
@@ -241,24 +284,34 @@ cli-file-manager/
 
 ## Technologies
 
-* C++
 * C++17
-* CMake
-* `std::filesystem`
 * C++ Standard Library
+* `std::filesystem`
+* CMake
 * Git
 * GitHub
 
 ## Building
 
-From the project root:
+Clone the repository and enter the project directory:
+
+```bash
+cd cli-file-manager
+```
+
+Configure the project:
 
 ```bash
 cmake -S . -B build
+```
+
+Build:
+
+```bash
 cmake --build build
 ```
 
-Run the program:
+Run:
 
 ```bash
 ./build/filemanager
@@ -269,10 +322,9 @@ Run the program:
 ### Phase 0 — Project Setup
 
 * CMake project
-* Basic C++ executable
-* Git repository
-* GitHub repository
-* Initial project structure
+* C++ executable
+* Git/GitHub
+* Project structure
 
 ### Phase 1 — Navigation
 
@@ -280,7 +332,7 @@ Run the program:
 * `pwd`
 * `cd`
 * `back`
-* Basic command loop
+* Command loop
 * Basic error handling
 
 ### Phase 2 — File Operations
@@ -291,90 +343,112 @@ Run the program:
 * `cp`
 * `mv`
 * `rm`
-* Command validation
 
-### Phase 3 — File Information
+### Phase 3 — File Metadata
 
-* File sizes
-* File types
-* Modification times
-* Detailed file information
+* File size
+* File type
+* Modification time
+* File information
 
 ### Phase 4 — Architecture
 
-* Separated headers and implementations
+* Header/source separation
 * `FileManager` class
-* `CommandParser` class
-* Cleaner project structure
-* Separation of responsibilities
+* `CommandParser`
+* Improved project organization
 
 ### Phase 5 — Recursive Filesystem Operations
 
-* Recursive directory trees
-* Recursive directory size calculation
-* Recursive directory copying
-* Recursive directory deletion
-* `tree`
-* `du`
+* Recursive directory tree
+* Recursive directory size
+* Recursive copying
+* Recursive removal
 
-### Phase 6 — Command Parsing & Path Handling
+### Phase 6 — Command Parsing and Paths
 
-* Tokenization
 * Quoted arguments
 * Paths containing spaces
 * Relative paths
 * Absolute paths
+* `.` and `..`
 * Path normalization
-* Improved filesystem validation
-* Safer filesystem operations
+
+### Phase 7 — Search, Sorting and Filtering
+
+* Recursive name search
+* Extension search
+* Size-based search
+* File/directory filtering
+* Name sorting
+* Size sorting
+* Ascending/descending sorting
+
+### Future Phases
+
+Potential future development includes:
+
+* Improved command parsing
+* Permission information
+* Unix file permissions
+* Symbolic links
+* Interactive deletion confirmation
+* More advanced search expressions
+* File previews
+* Configuration files
+* Automated unit tests
+* Improved user interface
+* Performance improvements
+* Cross-platform improvements
 
 ## Design Principles
 
-The project focuses on:
+The project follows several software engineering principles:
 
-* Separation of concerns
-* Reusable classes
-* Clear interfaces
-* Error handling
-* Standard C++ facilities
-* Incremental development
-* Testable functionality
-* Clean project organization
+### Separation of Responsibilities
 
-## Future Development
+Command parsing and filesystem manipulation are kept separate.
 
-Planned future improvements include:
+### Reusable Components
 
-* More advanced command parsing
-* Search functionality
-* Sorting and filtering
-* File permissions
-* Unix-specific filesystem features
-* Better interactive interface
-* Automated tests
-* Confirmation before destructive operations
-* Configuration support
-* Performance improvements
-* Portfolio-level polish
+Filesystem functionality is implemented inside `FileManager` rather than directly inside the command loop.
+
+### Error Handling
+
+Filesystem operations are protected against common errors and report useful messages to the user.
+
+### Incremental Development
+
+The application is developed through multiple phases, with each phase introducing additional functionality.
+
+### Standard Library
+
+The project uses the C++ standard library, particularly `std::filesystem`, instead of implementing low-level filesystem functionality from scratch.
 
 ## Learning Goals
 
 This project is designed to provide practical experience with:
 
-* C++17
+* Modern C++
 * Object-oriented programming
-* Filesystem programming
+* C++17
+* Classes and encapsulation
+* Header/source separation
 * Command-line applications
-* Recursion
-* Path manipulation
-* Parsing
-* Error handling
+* Filesystem programming
+* Recursive algorithms
+* Searching
+* Sorting
+* Lambda functions
+* Exception handling
+* String parsing
 * CMake
-* Git and GitHub
+* Git
+* GitHub
 * Software architecture
 
 ## Project Status
 
-**Current phase: Phase 6 — Command Parsing & Path Handling**
+**Completed through Phase 7.**
 
-The project is actively being developed phase by phase.
+The current version supports filesystem navigation, file operations, metadata inspection, recursive operations, path handling, command parsing, searching, filtering, and sorting.

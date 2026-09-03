@@ -14,14 +14,26 @@ public:
     FileManager();
 
     // Navigation
-    void list_directory() const;
+    void list_directory(
+        const std::string& option = ""
+    ) const;
+
     void print_working_directory() const;
-    void change_directory(const std::string& name);
+
+    void change_directory(
+        const std::string& name
+    );
+
     void go_back();
 
     // Basic filesystem operations
-    void make_directory(const std::string& name);
-    void create_file(const std::string& name);
+    void make_directory(
+        const std::string& name
+    );
+
+    void create_file(
+        const std::string& name
+    );
 
     void rename_item(
         const std::string& old_name,
@@ -38,17 +50,51 @@ public:
         const std::string& destination
     );
 
-    void remove_item(const std::string& name);
+    void remove_item(
+        const std::string& name
+    );
 
     // File information
-    void show_file_size(const std::string& name) const;
-    void show_file_type(const std::string& name) const;
-    void show_modified_time(const std::string& name) const;
-    void show_info(const std::string& name) const;
+    void show_file_size(
+        const std::string& name
+    ) const;
+
+    void show_file_type(
+        const std::string& name
+    ) const;
+
+    void show_modified_time(
+        const std::string& name
+    ) const;
+
+    void show_info(
+        const std::string& name
+    ) const;
 
     // Recursive operations
-    void show_tree(const std::string& name = ".") const;
-    void show_directory_size(const std::string& name) const;
+    void show_tree(
+        const std::string& name = "."
+    ) const;
+
+    void show_directory_size(
+        const std::string& name
+    ) const;
+
+    // Search
+    void find(
+        const std::string& name,
+        const std::string& start_path = "."
+    ) const;
+
+    void find_extension(
+        const std::string& extension,
+        const std::string& start_path = "."
+    ) const;
+
+    void find_size(
+        std::uintmax_t minimum_size,
+        const std::string& start_path = "."
+    ) const;
 
 private:
     std::string format_time(
@@ -66,5 +112,21 @@ private:
 
     std::uintmax_t calculate_directory_size(
         const fs::path& path
+    ) const;
+
+    // Search helpers
+    void find_recursive(
+        const fs::path& path,
+        const std::string& name
+    ) const;
+
+    void find_extension_recursive(
+        const fs::path& path,
+        const std::string& extension
+    ) const;
+
+    void find_size_recursive(
+        const fs::path& path,
+        std::uintmax_t minimum_size
     ) const;
 };
