@@ -3,6 +3,9 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <chrono>
+#include <iomanip>
+#include <ctime>
 
 namespace fs = std::filesystem;
 
@@ -21,8 +24,26 @@ void list_directory(const fs::path& directory) {
         else if (entry.is_regular_file()) {
             std::cout << "[FILE] ";
         }
+        else {
+            std::cout << "[OTHER]";
+        }
 
-        std::cout << entry.path().filename() << '\n';
+        std::cout << entry.path().filename();
+
+        // Show file size for regular files
+        if (entry.is_regular_file()) {
+
+            try {
+                std::cout << "  "
+                          << entry.file_size()
+                          << " bytes";
+            }
+            catch (const fs::filesystem_error&) {
+                std::cout << "  [size unavailable]";
+            }
+        }
+
+        std::cout << '\n';
     }
 }
 
@@ -245,6 +266,209 @@ void remove_item(const fs::path& current_directory,
 
 
 // --------------------------------------------------
+// Show file size
+// --------------------------------------------------
+
+void show_file_size(const fs::path& current_directory,
+                    const std::string& name) {
+
+    fs::path target =
+        current_directory / name;
+
+    if (!fs::exists(target)) {
+        std::cout << "File or directory does not exist.\n";
+        return;
+    }
+
+    if (!fs::is_regular_file(target)) {
+        std::cout << "Size command only works with regular files.\n";
+        return;
+    }
+
+    try {
+
+        auto size = fs::file_size(target);
+
+        std::cout << "Size: "
+                  << size
+                  << " bytes\n";
+    }
+    catch (const fs::filesystem_error& e) {
+
+        std::cout << "Failed to get file size: "
+                  << e.what() << '\n';
+    }
+}
+
+
+// --------------------------------------------------
+// Show file type
+// --------------------------------------------------
+
+void show_file_type(const fs::path& current_directory,
+                    const std::string& name) {
+
+    fs::path target =
+        current_directory / name;
+
+    if (!fs::exists(target)) {
+        std::cout << "File or directory does not exist.\n";
+        return;
+    }
+
+    try {
+
+        if (fs::is_regular_file(target)) {
+            std::cout << "Type: Regular file\n";
+        }
+        else if (fs::is_directory(target)) {
+            std::cout << "Type: Directory\n";
+        }
+        else if (fs::is_symlink(target)) {
+            std::cout << "Type: Symbolic link\n";
+        }
+        else {
+            std::cout << "Type: Other\n";
+        }
+    }
+    catch (const fs::filesystem_error& e) {
+
+        std::cout << "Failed to determine file type: "
+                  << e.what() << '\n';
+    }
+}
+
+
+// --------------------------------------------------
+// Convert file time to readable string
+// --------------------------------------------------
+
+std::string format_time(const fs::file_time_type& file_time) {
+
+    using namespace std::chrono;
+
+    auto system_time =
+        time_point_cast<system_clock::duration>(
+            file_time - fs::file_time_type::clock::now()
+            + system_clock::now()
+        );
+
+    std::time_t time =
+        system_clock::to_time_t(system_time);
+
+    std::tm* local_time =
+        std::localtime(&time);
+
+    if (local_time == nullptr) {
+        return "Unknown";
+    }
+
+    std::ostringstream output;
+
+    output << std::put_time(
+        local_time,
+        "%Y-%m-%d %H:%M:%S"
+    );
+
+    return output.str();
+}
+
+
+// --------------------------------------------------
+// Show last modification time
+// --------------------------------------------------
+
+void show_modified_time(const fs::path& current_directory,
+                        const std::string& name) {
+
+    fs::path target =
+        current_directory / name;
+
+    if (!fs::exists(target)) {
+        std::cout << "File or directory does not exist.\n";
+        return;
+    }
+
+    try {
+
+        auto modified =
+            fs::last_write_time(target);
+
+        std::cout << "Last modified: "
+                  << format_time(modified)
+                  << '\n';
+    }
+    catch (const fs::filesystem_error& e) {
+
+        std::cout << "Failed to get modification time: "
+                  << e.what() << '\n';
+    }
+}
+
+
+// --------------------------------------------------
+// Show complete information
+// --------------------------------------------------
+
+void show_info(const fs::path& current_directory,
+               const std::string& name) {
+
+    fs::path target =
+        current_directory / name;
+
+    if (!fs::exists(target)) {
+        std::cout << "File or directory does not exist.\n";
+        return;
+    }
+
+    try {
+
+        std::cout << "\nName: "
+                  << target.filename()
+                  << '\n';
+
+        if (fs::is_regular_file(target)) {
+
+            std::cout << "Type: Regular file\n";
+
+            std::cout << "Size: "
+                      << fs::file_size(target)
+                      << " bytes\n";
+        }
+        else if (fs::is_directory(target)) {
+
+            std::cout << "Type: Directory\n";
+        }
+        else if (fs::is_symlink(target)) {
+
+            std::cout << "Type: Symbolic link\n";
+        }
+        else {
+
+            std::cout << "Type: Other\n";
+        }
+
+        auto modified =
+            fs::last_write_time(target);
+
+        std::cout << "Last modified: "
+                  << format_time(modified)
+                  << '\n';
+
+        std::cout << "Absolute path: "
+                  << fs::absolute(target)
+                  << '\n';
+
+    }
+    catch (const fs::filesystem_error& e) {
+
+        std::cout << "Failed to get information: "
+                  << e.what() << '\n';
+    }
+}
+
+
+// --------------------------------------------------
 // Help
 // --------------------------------------------------
 
@@ -252,20 +476,25 @@ void show_help() {
 
     std::cout << "\nCommands:\n";
 
-    std::cout << "  ls                  List directory\n";
-    std::cout << "  pwd                 Show current directory\n";
-    std::cout << "  cd <dir>            Enter directory\n";
-    std::cout << "  back                Go to parent directory\n";
+    std::cout << "  ls                         List directory\n";
+    std::cout << "  pwd                        Show current directory\n";
+    std::cout << "  cd <dir>                   Enter directory\n";
+    std::cout << "  back                       Go to parent directory\n";
 
-    std::cout << "  mkdir <name>        Create directory\n";
-    std::cout << "  touch <name>        Create empty file\n";
-    std::cout << "  rename <old> <new>  Rename file/directory\n";
-    std::cout << "  cp <source> <dest>  Copy file\n";
-    std::cout << "  mv <source> <dest>  Move file/directory\n";
-    std::cout << "  rm <name>           Remove file/empty directory\n";
+    std::cout << "  mkdir <name>               Create directory\n";
+    std::cout << "  touch <name>               Create empty file\n";
+    std::cout << "  rename <old> <new>         Rename file/directory\n";
+    std::cout << "  cp <source> <dest>         Copy file\n";
+    std::cout << "  mv <source> <dest>         Move file/directory\n";
+    std::cout << "  rm <name>                  Remove file/empty directory\n";
 
-    std::cout << "  help                Show help\n";
-    std::cout << "  q                   Quit\n";
+    std::cout << "  size <file>                Show file size\n";
+    std::cout << "  type <name>                Show file type\n";
+    std::cout << "  modified <name>            Show modification time\n";
+    std::cout << "  info <name>                Show detailed information\n";
+
+    std::cout << "  help                       Show help\n";
+    std::cout << "  q                          Quit\n";
 }
 
 
@@ -514,6 +743,90 @@ int main() {
             }
 
             remove_item(
+                current_directory,
+                argument
+            );
+        }
+
+
+        // --------------------------------------------------
+        // File size
+        // --------------------------------------------------
+
+        else if (action == "size") {
+
+            if (argument.empty()) {
+
+                std::cout
+                    << "Usage: size <file>\n";
+
+                continue;
+            }
+
+            show_file_size(
+                current_directory,
+                argument
+            );
+        }
+
+
+        // --------------------------------------------------
+        // File type
+        // --------------------------------------------------
+
+        else if (action == "type") {
+
+            if (argument.empty()) {
+
+                std::cout
+                    << "Usage: type <file_or_directory>\n";
+
+                continue;
+            }
+
+            show_file_type(
+                current_directory,
+                argument
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Modification time
+        // --------------------------------------------------
+
+        else if (action == "modified") {
+
+            if (argument.empty()) {
+
+                std::cout
+                    << "Usage: modified <file_or_directory>\n";
+
+                continue;
+            }
+
+            show_modified_time(
+                current_directory,
+                argument
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Information
+        // --------------------------------------------------
+
+        else if (action == "info") {
+
+            if (argument.empty()) {
+
+                std::cout
+                    << "Usage: info <file_or_directory>\n";
+
+                continue;
+            }
+
+            show_info(
                 current_directory,
                 argument
             );

@@ -21,6 +21,10 @@ The project is being developed progressively, starting with basic filesystem nav
 * `cp <source> <destination>` — Copy a file
 * `mv <source> <destination>` — Move a file or directory
 * `rm <name>` — Remove a file or empty directory
+* `size <file>` — Show the size of a file
+* `type <name>` — Show the type of a filesystem object
+* `modified <name>` — Show the last modification time
+* `info <name>` — Show detailed information
 
 ### Other
 
@@ -141,6 +145,16 @@ The project is being developed in multiple phases.
 * Improved command parsing
 * Error handling
 * Manual testing
+
+### Phase 3 — File Information & Metadata
+
+* File size information
+* File type detection
+* Last modification time
+* Detailed file information
+* Improved `ls` output
+* Filesystem metadata handling
+* Additional error handling
 
 ### Future Phases
 
