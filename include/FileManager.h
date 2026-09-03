@@ -1,14 +1,25 @@
 #pragma once
 
+#include "HistoryManager.h"
+#include "SnapshotManager.h"
+#include "UndoManager.h"
+
 #include <cstdint>
 #include <filesystem>
 #include <string>
+
 
 namespace fs = std::filesystem;
 
 class FileManager {
 private:
     fs::path current_directory;
+
+    HistoryManager history_manager;
+
+    UndoManager undo_manager;
+
+    SnapshotManager snapshot_manager;
 
 public:
     FileManager();
@@ -117,6 +128,18 @@ public:
     void show_link_target(
         const std::string& name
     ) const;
+
+        void show_history() const;
+
+    void undo();
+
+    void create_snapshot();
+
+    void show_snapshot() const;
+
+    void show_snapshot_diff();
+
+    void clear_snapshot();
 
 private:
     std::string format_time(

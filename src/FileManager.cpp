@@ -11,7 +11,9 @@
 #include <sys/stat.h>
 
 FileManager::FileManager()
-    : current_directory(fs::current_path()) {
+    : current_directory(fs::current_path()),
+      undo_manager(history_manager) {
+
 }
 
 void FileManager::list_directory(
@@ -247,6 +249,11 @@ void FileManager::make_directory(
         << "Directory created: \""
         << target.filename()
         << "\"\n";
+
+    history_manager.record(
+        "create_directory",
+        target.string()
+    );
 }
 
 void FileManager::create_file(
@@ -281,6 +288,11 @@ void FileManager::create_file(
         << "File created: \""
         << target.filename()
         << "\"\n";
+
+    history_manager.record(
+        "create_file",
+        target.string()
+    );
 }
 
 void FileManager::rename_item(
@@ -332,6 +344,12 @@ void FileManager::rename_item(
         << "\" to \""
         << destination.filename()
         << "\"\n";
+
+    history_manager.record(
+        "rename",
+        source.string(),
+        destination.string()
+    );
 }
 
 void FileManager::copy_item(
@@ -450,6 +468,12 @@ void FileManager::move_item(
         << "\" -> \""
         << destination_path
         << "\"\n";
+
+    history_manager.record(
+        "move",
+        source_path.string(),
+        destination_path.string()
+    );
 }
 
 void FileManager::remove_item(
@@ -1482,4 +1506,37 @@ bool FileManager::is_same_path(
 
     return first.lexically_normal()
         == second.lexically_normal();
+}
+
+void FileManager::show_history() const {
+    history_manager.show();
+}
+
+void FileManager::undo() {
+    undo_manager.undo(
+        current_directory
+    );
+}
+
+void FileManager::create_snapshot() {
+    snapshot_manager.create(
+        current_directory
+    );
+}
+
+void FileManager::show_snapshot() const {
+    snapshot_manager.show();
+}
+
+void FileManager::show_snapshot_diff() {
+    snapshot_manager.diff(
+        current_directory
+    );
+}
+
+void FileManager::clear_snapshot() {
+    snapshot_manager.clear();
+
+    std::cout
+        << "Snapshot cleared.\n";
 }

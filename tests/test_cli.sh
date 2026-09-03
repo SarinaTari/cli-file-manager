@@ -696,8 +696,9 @@ assert_contains \
     "No duplicate files found" \
     "duplicates handles nonexistent paths"
 
+
 # ============================================================
-# Phase 13: Developer Intelligence
+# PHASE 13 — DEVELOPER INTELLIGENCE
 # ============================================================
 
 PROJECT_DIR="$TEST_DIR/project-test"
@@ -744,6 +745,7 @@ assert_contains \
     "C/C++ header files: 1" \
     "project counts C++ header files"
 
+
 OUTPUT="$(run_program "deps \"$PROJECT_DIR\"
 q
 ")"
@@ -768,6 +770,7 @@ assert_contains \
     "test.h" \
     "deps detects local header include"
 
+
 git -C "$TEST_DIR" init -q
 
 OUTPUT="$(run_program "git .
@@ -790,6 +793,304 @@ assert_contains \
     "git displays branch"
 
 rm -rf "$PROJECT_DIR"
+
+
+# ============================================================
+# PHASE 14 — HISTORY
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'touch history-file.txt\nhistory\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "create_file" \
+    "history records file creation"
+
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'mkdir history-dir\nhistory\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "create_directory" \
+    "history records directory creation"
+
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'touch history-original.txt\nrename history-original.txt history-renamed.txt\nhistory\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "rename" \
+    "history records rename"
+
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'touch history-move-source.txt\nmv history-move-source.txt history-move-destination.txt\nhistory\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "move" \
+    "history records move"
+
+
+# ============================================================
+# PHASE 14 — UNDO FILE CREATION
+# ============================================================
+
+rm -f "$TEST_DIR/undo-file.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'touch undo-file.txt\nundo\nq\n' | "$PROGRAM"
+)"
+
+assert_file_not_exists \
+    "$TEST_DIR/undo-file.txt" \
+    "undo removes a newly created file"
+
+assert_contains \
+    "$OUTPUT" \
+    "Undone: file creation" \
+    "undo reports successful file creation undo"
+
+
+# ============================================================
+# PHASE 14 — UNDO DIRECTORY CREATION
+# ============================================================
+
+rm -rf "$TEST_DIR/undo-directory"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'mkdir undo-directory\nundo\nq\n' | "$PROGRAM"
+)"
+
+assert_file_not_exists \
+    "$TEST_DIR/undo-directory" \
+    "undo removes a newly created empty directory"
+
+assert_contains \
+    "$OUTPUT" \
+    "Undone: directory creation" \
+    "undo reports successful directory creation undo"
+
+
+# ============================================================
+# PHASE 14 — UNDO RENAME
+# ============================================================
+
+rm -f "$TEST_DIR/undo-rename-old.txt"
+rm -f "$TEST_DIR/undo-rename-new.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'touch undo-rename-old.txt\nrename undo-rename-old.txt undo-rename-new.txt\nundo\nq\n' | "$PROGRAM"
+)"
+
+assert_file_exists \
+    "$TEST_DIR/undo-rename-old.txt" \
+    "undo restores original name after rename"
+
+assert_file_not_exists \
+    "$TEST_DIR/undo-rename-new.txt" \
+    "undo removes renamed path after rename"
+
+
+# ============================================================
+# PHASE 14 — UNDO MOVE
+# ============================================================
+
+rm -f "$TEST_DIR/undo-move-source.txt"
+rm -f "$TEST_DIR/undo-move-destination.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'touch undo-move-source.txt\nmv undo-move-source.txt undo-move-destination.txt\nundo\nq\n' | "$PROGRAM"
+)"
+
+assert_file_exists \
+    "$TEST_DIR/undo-move-source.txt" \
+    "undo restores original path after move"
+
+assert_file_not_exists \
+    "$TEST_DIR/undo-move-destination.txt" \
+    "undo removes moved path after move"
+
+
+# ============================================================
+# PHASE 14 — UNDO AFTER CHANGING DIRECTORY
+# ============================================================
+
+rm -f "$TEST_DIR/navigation-undo.txt"
+
+rm -rf "$TEST_DIR/undo-navigation"
+mkdir "$TEST_DIR/undo-navigation"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'touch navigation-undo.txt\ncd undo-navigation\nundo\nq\n' | "$PROGRAM"
+)"
+
+assert_file_not_exists \
+    "$TEST_DIR/navigation-undo.txt" \
+    "undo works after changing directory"
+
+
+# ============================================================
+# PHASE 14 — EMPTY HISTORY
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'undo\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Nothing to undo." \
+    "undo reports when there is nothing to undo"
+
+
+# ============================================================
+# PHASE 14 — SNAPSHOT CREATION
+# ============================================================
+
+rm -rf "$TEST_DIR/snapshot-test"
+
+mkdir -p "$TEST_DIR/snapshot-test/sub"
+
+printf 'snapshot content' \
+    > "$TEST_DIR/snapshot-test/file.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR/snapshot-test" || exit 1
+    printf 'snapshot\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Snapshot created." \
+    "snapshot creates a snapshot"
+
+assert_contains \
+    "$OUTPUT" \
+    "Entries:" \
+    "snapshot reports number of entries"
+
+
+# ============================================================
+# PHASE 14 — SHOW SNAPSHOT
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR/snapshot-test" || exit 1
+    printf 'snapshot\nshowsnapshot\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Snapshot:" \
+    "showsnapshot displays snapshot"
+
+assert_contains \
+    "$OUTPUT" \
+    "file.txt" \
+    "showsnapshot displays captured files"
+
+
+# ============================================================
+# PHASE 14 — SNAPSHOT DIFF: ADDED FILE
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR/snapshot-test" || exit 1
+    printf 'snapshot\ntouch added.txt\ndiff\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Added:" \
+    "snapshot diff detects added files"
+
+assert_contains \
+    "$OUTPUT" \
+    "added.txt" \
+    "snapshot diff identifies added file"
+
+
+# ============================================================
+# PHASE 14 — SNAPSHOT DIFF: REMOVED FILE
+# ============================================================
+
+rm -f "$TEST_DIR/snapshot-test/removed.txt"
+
+printf 'temporary snapshot file' \
+    > "$TEST_DIR/snapshot-test/removed.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR/snapshot-test" || exit 1
+    printf 'snapshot\nrm removed.txt\ny\ndiff\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Removed:" \
+    "snapshot diff detects removed files"
+
+assert_contains \
+    "$OUTPUT" \
+    "removed.txt" \
+    "snapshot diff identifies removed file"
+
+
+# ============================================================
+# PHASE 14 — NO SNAPSHOT
+# ============================================================
+
+rm -rf "$TEST_DIR/no-snapshot-test"
+
+mkdir "$TEST_DIR/no-snapshot-test"
+
+OUTPUT="$(
+    cd "$TEST_DIR/no-snapshot-test" || exit 1
+    printf 'showsnapshot\ndiff\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "No snapshot exists." \
+    "snapshot commands handle missing snapshot"
+
+
+# ============================================================
+# PHASE 14 — CLEAR SNAPSHOT
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR/snapshot-test" || exit 1
+    printf 'snapshot\nclearsnapshot\nshowsnapshot\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Snapshot cleared." \
+    "clearsnapshot reports successful clearing"
+
+assert_contains \
+    "$OUTPUT" \
+    "No snapshot exists." \
+    "clearsnapshot removes stored snapshot"
+
 
 # ============================================================
 # UI COMMAND

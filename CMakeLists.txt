@@ -16,6 +16,9 @@ add_executable(filemanager
     src/ProjectDetector.cpp
     src/GitAnalyzer.cpp
     src/DependencyAnalyzer.cpp
+    src/HistoryManager.cpp
+    src/UndoManager.cpp
+    src/SnapshotManager.cpp
 )
 
 target_include_directories(filemanager PRIVATE

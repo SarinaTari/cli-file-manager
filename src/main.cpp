@@ -695,6 +695,66 @@ int main() {
                 ui.run();
             }
 
+            else if (command.action == "history") {
+                if (!command.arguments.empty()) {
+                    throw std::invalid_argument(
+                        "Usage: history"
+                    );
+                }
+
+                file_manager.show_history();
+            }
+
+            else if (command.action == "undo") {
+                if (!command.arguments.empty()) {
+                    throw std::invalid_argument(
+                        "Usage: undo"
+                    );
+                }
+
+                file_manager.undo();
+            }
+
+            else if (command.action == "snapshot") {
+                if (!command.arguments.empty()) {
+                    throw std::invalid_argument(
+                        "Usage: snapshot"
+                    );
+                }
+
+                file_manager.create_snapshot();
+            }
+
+            else if (command.action == "showsnapshot") {
+                if (!command.arguments.empty()) {
+                    throw std::invalid_argument(
+                        "Usage: showsnapshot"
+                    );
+                }
+
+                file_manager.show_snapshot();
+            }
+
+            else if (command.action == "diff") {
+                if (!command.arguments.empty()) {
+                    throw std::invalid_argument(
+                        "Usage: diff"
+                    );
+                }
+
+                file_manager.show_snapshot_diff();
+            }
+
+            else if (command.action == "clearsnapshot") {
+                if (!command.arguments.empty()) {
+                    throw std::invalid_argument(
+                        "Usage: clearsnapshot"
+                    );
+                }
+
+                file_manager.clear_snapshot();
+            }
+
             // --------------------------------------------------
             // Unknown command
             // --------------------------------------------------
