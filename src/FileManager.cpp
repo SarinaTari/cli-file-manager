@@ -338,12 +338,27 @@ void FileManager::copy_item(
     const std::string& source,
     const std::string& destination
 ) {
-    fs::path source_path = resolve_path(source);
-    fs::path destination_path = resolve_path(destination);
+    fs::path source_path =
+        resolve_path(source);
+
+    fs::path destination_path =
+        resolve_path(destination);
 
     ensure_exists(
         source_path,
         "Source does not exist"
+    );
+
+    /*
+     * Check this BEFORE checking whether the
+     * destination already exists.
+     *
+     * This gives the user the more meaningful
+     * error when copying a directory into itself.
+     */
+    ensure_not_inside(
+        source_path,
+        destination_path
     );
 
     ensure_not_exists(
@@ -351,20 +366,9 @@ void FileManager::copy_item(
         "Destination already exists"
     );
 
-    if (is_same_path(source_path, destination_path)) {
-        throw std::runtime_error(
-            "Source and destination are the same."
-        );
-    }
-
     std::error_code ec;
 
     if (fs::is_directory(source_path, ec)) {
-        ensure_not_inside(
-            source_path,
-            destination_path
-        );
-
         fs::copy(
             source_path,
             destination_path,
@@ -389,10 +393,10 @@ void FileManager::copy_item(
     }
 
     std::cout
-        << "Copied \""
+        << "Copied: \""
         << source_path.filename()
-        << "\" to \""
-        << destination_path.filename()
+        << "\" -> \""
+        << destination_path
         << "\"\n";
 }
 
@@ -400,12 +404,24 @@ void FileManager::move_item(
     const std::string& source,
     const std::string& destination
 ) {
-    fs::path source_path = resolve_path(source);
-    fs::path destination_path = resolve_path(destination);
+    fs::path source_path =
+        resolve_path(source);
+
+    fs::path destination_path =
+        resolve_path(destination);
 
     ensure_exists(
         source_path,
         "Source does not exist"
+    );
+
+    /*
+     * Check this BEFORE checking whether the
+     * destination already exists.
+     */
+    ensure_not_inside(
+        source_path,
+        destination_path
     );
 
     ensure_not_exists(
@@ -413,20 +429,7 @@ void FileManager::move_item(
         "Destination already exists"
     );
 
-    if (is_same_path(source_path, destination_path)) {
-        throw std::runtime_error(
-            "Source and destination are the same."
-        );
-    }
-
     std::error_code ec;
-
-    if (fs::is_directory(source_path, ec)) {
-        ensure_not_inside(
-            source_path,
-            destination_path
-        );
-    }
 
     fs::rename(
         source_path,
@@ -442,10 +445,10 @@ void FileManager::move_item(
     }
 
     std::cout
-        << "Moved \""
+        << "Moved: \""
         << source_path.filename()
-        << "\" to \""
-        << destination_path.filename()
+        << "\" -> \""
+        << destination_path
         << "\"\n";
 }
 
@@ -1357,31 +1360,60 @@ void FileManager::ensure_not_exists(
 void FileManager::ensure_not_dangerous_path(
     const fs::path& path
 ) const {
-    fs::path normalized =
-        path.lexically_normal();
+    fs::path absolute_path =
+        fs::absolute(path);
 
-    if (
-        normalized == "."
-        || normalized == ".."
-    ) {
-        throw std::runtime_error(
-            "Refusing to remove dangerous path: "
-            + path.string()
+    std::error_code ec;
+
+    fs::path canonical_path =
+        fs::weakly_canonical(
+            absolute_path,
+            ec
         );
+
+    if (ec) {
+        canonical_path =
+            absolute_path.lexically_normal();
     }
 
-    if (normalized.root_path() == normalized) {
-        throw std::runtime_error(
-            "Refusing to remove filesystem root."
+    fs::path current =
+        fs::weakly_canonical(
+            current_directory,
+            ec
         );
+
+    if (ec) {
+        current =
+            fs::absolute(
+                current_directory
+            ).lexically_normal();
     }
 
-    if (is_same_path(
-            normalized,
-            current_directory
-        )) {
+    /*
+     * Never allow removing the current directory.
+     */
+    if (canonical_path == current) {
         throw std::runtime_error(
             "Refusing to remove the current directory."
+        );
+    }
+
+    /*
+     * Never allow removing the parent of
+     * the current directory.
+     */
+    if (canonical_path == current.parent_path()) {
+        throw std::runtime_error(
+            "Refusing to remove the parent directory."
+        );
+    }
+
+    /*
+     * Never allow removing the filesystem root.
+     */
+    if (canonical_path == fs::path("/")) {
+        throw std::runtime_error(
+            "Refusing to remove the filesystem root."
         );
     }
 }

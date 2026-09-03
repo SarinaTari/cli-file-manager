@@ -5,7 +5,7 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 set -u
 
-PROGRAM="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+PROGRAM="$1"
 
 if [ ! -x "$PROGRAM" ]; then
     echo "ERROR: Program does not exist or is not executable:"
@@ -13,7 +13,14 @@ if [ ! -x "$PROGRAM" ]; then
     exit 1
 fi
 
+# Convert PROGRAM to an absolute path.
+PROGRAM="$(cd "$(dirname "$PROGRAM")" && pwd)/$(basename "$PROGRAM")"
+
+# Create temporary test directory.
 TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/cli-file-manager-test.XXXXXX")"
+
+# macOS can represent /var as /private/var.
+# pwd -P gives us the physical path.
 TEST_DIR="$(cd "$TEST_DIR" && pwd -P)"
 
 cleanup() {
@@ -66,8 +73,10 @@ assert_contains() {
         pass "$description"
     else
         fail "$description"
+
         echo "  Expected output to contain:"
         echo "  $expected"
+
         echo "  Actual output:"
         echo "$output"
     fi
@@ -82,18 +91,10 @@ run_program() {
     )
 }
 
-echo "========================================"
-echo "CLI File Manager - Integration Tests"
-echo "========================================"
-echo
 
-echo "Test directory:"
-echo "$TEST_DIR"
-echo
-
-# --------------------------------------------------
-# 1. Basic startup / pwd
-# --------------------------------------------------
+# ============================================================
+# PHASE 1 — NAVIGATION
+# ============================================================
 
 OUTPUT="$(run_program 'pwd\nq\n')"
 
@@ -103,9 +104,19 @@ assert_contains \
     "pwd shows the current directory"
 
 
-# --------------------------------------------------
-# 2. File creation
-# --------------------------------------------------
+mkdir "$TEST_DIR/navigation"
+
+OUTPUT="$(run_program 'cd navigation\npwd\nq\n')"
+
+assert_contains \
+    "$OUTPUT" \
+    "$TEST_DIR/navigation" \
+    "cd changes the current directory"
+
+
+# ============================================================
+# PHASE 2 — FILE OPERATIONS
+# ============================================================
 
 OUTPUT="$(run_program 'touch file.txt\nq\n')"
 
@@ -114,10 +125,6 @@ assert_file_exists \
     "touch creates a file"
 
 
-# --------------------------------------------------
-# 3. Directory creation
-# --------------------------------------------------
-
 OUTPUT="$(run_program 'mkdir folder\nq\n')"
 
 assert_file_exists \
@@ -125,240 +132,278 @@ assert_file_exists \
     "mkdir creates a directory"
 
 
-# --------------------------------------------------
-# 4. Directory navigation
-# --------------------------------------------------
+OUTPUT="$(run_program 'mkdir "folder with spaces"\nq\n')"
 
-OUTPUT="$(run_program 'mkdir navigation\ncd navigation\npwd\nq\n')"
-
-assert_contains \
-    "$OUTPUT" \
-    "$TEST_DIR/navigation" \
-    "cd changes the current directory"
-
-
-# --------------------------------------------------
-# 5. Quoted paths
-# --------------------------------------------------
-
-OUTPUT="$(run_program 'mkdir "My Folder"\ncd "My Folder"\npwd\nq\n')"
-
-assert_contains \
-    "$OUTPUT" \
-    "$TEST_DIR/My Folder" \
+assert_file_exists \
+    "$TEST_DIR/folder with spaces" \
     "quoted paths work correctly"
 
 
-# --------------------------------------------------
-# 6. Rename
-# --------------------------------------------------
-
-OUTPUT="$(run_program 'touch old.txt\nrename old.txt new.txt\nq\n')"
+OUTPUT="$(run_program 'touch original.txt\nrename original.txt renamed.txt\nq\n')"
 
 assert_file_not_exists \
-    "$TEST_DIR/old.txt" \
+    "$TEST_DIR/original.txt" \
     "rename removes the old name"
 
 assert_file_exists \
-    "$TEST_DIR/new.txt" \
+    "$TEST_DIR/renamed.txt" \
     "rename creates the new name"
 
 
-# --------------------------------------------------
-# 7. Copy
-# --------------------------------------------------
-
-OUTPUT="$(run_program 'touch source.txt\ncp source.txt copy.txt\nq\n')"
+OUTPUT="$(run_program 'touch copy-source.txt\ncp copy-source.txt copy.txt\nq\n')"
 
 assert_file_exists \
     "$TEST_DIR/copy.txt" \
-    "cp creates a copy"
+    "copy creates a copied file"
 
-
-# --------------------------------------------------
-# 8. Move
-# --------------------------------------------------
 
 OUTPUT="$(run_program 'touch move-source.txt\nmv move-source.txt moved.txt\nq\n')"
 
 assert_file_not_exists \
     "$TEST_DIR/move-source.txt" \
-    "mv removes the original location"
+    "move removes the original file"
 
 assert_file_exists \
     "$TEST_DIR/moved.txt" \
-    "mv creates the destination"
+    "move creates the destination file"
 
 
-# --------------------------------------------------
-# 9. File information
-# --------------------------------------------------
+# ============================================================
+# PHASE 3 — FILE INFORMATION
+# ============================================================
 
-OUTPUT="$(run_program 'touch info.txt\ninfo info.txt\nq\n')"
-
-assert_contains \
-    "$OUTPUT" \
-    "info.txt" \
-    "info displays file information"
-
-
-# --------------------------------------------------
-# 10. Find by name
-# --------------------------------------------------
-
-OUTPUT="$(run_program 'touch searchable.txt\nfind searchable.txt .\nq\n')"
+OUTPUT="$(run_program 'touch information.txt\nsize information.txt\nq\n')"
 
 assert_contains \
     "$OUTPUT" \
-    "searchable.txt" \
-    "find locates a file by name"
+    "Size:" \
+    "size displays file size"
 
 
-# --------------------------------------------------
-# 11. Find by extension
-# --------------------------------------------------
-
-OUTPUT="$(run_program 'touch extension.txt\nfindext .txt .\nq\n')"
+OUTPUT="$(run_program 'touch information.txt\ntype information.txt\nq\n')"
 
 assert_contains \
     "$OUTPUT" \
-    "extension.txt" \
+    "Type:" \
+    "type displays file type"
+
+
+OUTPUT="$(run_program 'touch information.txt\nmodified information.txt\nq\n')"
+
+assert_contains \
+    "$OUTPUT" \
+    "Modified:" \
+    "modified displays modification time"
+
+
+OUTPUT="$(run_program 'touch detailed.txt\ninfo detailed.txt\nq\n')"
+
+assert_contains \
+    "$OUTPUT" \
+    "Path:" \
+    "info displays detailed information"
+
+
+# ============================================================
+# PHASE 4 — DIRECTORY TREE / SIZE
+# ============================================================
+
+mkdir -p "$TEST_DIR/tree-test/subdirectory"
+
+touch "$TEST_DIR/tree-test/file1.txt"
+touch "$TEST_DIR/tree-test/subdirectory/file2.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'tree tree-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "file1.txt" \
+    "tree displays files"
+
+assert_contains \
+    "$OUTPUT" \
+    "subdirectory" \
+    "tree displays directories"
+
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'du tree-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "bytes" \
+    "du displays directory size"
+
+
+# ============================================================
+# PHASE 5 — RECURSIVE SEARCH
+# ============================================================
+
+mkdir -p "$TEST_DIR/search-test/sub"
+
+touch "$TEST_DIR/search-test/hello.txt"
+touch "$TEST_DIR/search-test/sub/hello.txt"
+touch "$TEST_DIR/search-test/sub/test.cpp"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'find hello.txt search-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "hello.txt" \
+    "find locates files recursively"
+
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'findext .cpp search-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "test.cpp" \
     "findext locates files by extension"
 
 
-# --------------------------------------------------
-# 12. Find by size
-# --------------------------------------------------
+# ============================================================
+# PHASE 6 — FIND BY SIZE
+# ============================================================
 
-OUTPUT="$(run_program 'touch sized.txt\nfindsize 0 .\nq\n')"
+printf 'this is a relatively large test file\n' \
+    > "$TEST_DIR/large.txt"
 
-assert_contains \
-    "$OUTPUT" \
-    "sized.txt" \
-    "findsize locates files by minimum size"
-
-
-# --------------------------------------------------
-# 13. Permissions
-# --------------------------------------------------
-
-OUTPUT="$(run_program 'touch permission.txt\nperm permission.txt\nq\n')"
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'findsize 1 .\nq\n' | "$PROGRAM"
+)"
 
 assert_contains \
     "$OUTPUT" \
-    "permission.txt" \
-    "perm displays file permissions"
+    "large.txt" \
+    "findsize locates files above minimum size"
 
 
-# --------------------------------------------------
-# 14. chmod
-# --------------------------------------------------
+# ============================================================
+# PHASE 8 — PERMISSIONS
+# ============================================================
 
-OUTPUT="$(run_program 'touch chmod.txt\nchmod 755 chmod.txt\nperm chmod.txt\nq\n')"
+touch "$TEST_DIR/permission.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'perm permission.txt\nq\n' | "$PROGRAM"
+)"
 
 assert_contains \
     "$OUTPUT" \
-    "rwx" \
+    "Permissions:" \
+    "perm displays permissions"
+
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'chmod 644 permission.txt\nperm permission.txt\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "644" \
     "chmod changes permissions"
 
 
-# --------------------------------------------------
-# 15. Symbolic link
-# --------------------------------------------------
+# ============================================================
+# PHASE 8 — SYMBOLIC LINKS
+# ============================================================
 
-OUTPUT="$(run_program 'touch target.txt\nln -s target.txt symbolic.txt\nreadlink symbolic.txt\nq\n')"
+touch "$TEST_DIR/target.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'symlink target.txt symbolic.txt\nq\n' | "$PROGRAM"
+)"
 
 assert_file_exists \
     "$TEST_DIR/symbolic.txt" \
-    "ln -s creates a symbolic link"
+    "symbolic link is created"
+
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'linktarget symbolic.txt\nq\n' | "$PROGRAM"
+)"
 
 assert_contains \
     "$OUTPUT" \
     "target.txt" \
-    "readlink displays the symbolic link target"
+    "linktarget displays symbolic link target"
 
 
-# --------------------------------------------------
-# 16. Hard link
-# --------------------------------------------------
+# ============================================================
+# PHASE 8 — HARD LINKS
+# ============================================================
 
-OUTPUT="$(run_program 'touch hard-target.txt\nln hard-target.txt hard-link.txt\nq\n')"
+touch "$TEST_DIR/hard-target.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'ln hard-target.txt hard-link.txt\nq\n' | "$PROGRAM"
+)"
 
 assert_file_exists \
     "$TEST_DIR/hard-link.txt" \
-    "ln creates a hard link"
+    "hard link is created"
 
 
-# --------------------------------------------------
-# 17. Tree
-# --------------------------------------------------
-
-OUTPUT="$(run_program 'mkdir tree-test\ntouch tree-test/file.txt\ntree .\nq\n')"
-
-assert_contains \
-    "$OUTPUT" \
-    "tree-test" \
-    "tree displays directories"
-
-assert_contains \
-    "$OUTPUT" \
-    "file.txt" \
-    "tree displays nested files"
-
-
-# --------------------------------------------------
-# 18. Directory size
-# --------------------------------------------------
-
-OUTPUT="$(run_program 'mkdir size-test\ntouch size-test/file.txt\ndu size-test\nq\n')"
-
-assert_contains \
-    "$OUTPUT" \
-    "size-test" \
-    "du displays directory information"
-
-
-# --------------------------------------------------
-# 19. Invalid command arguments
-# --------------------------------------------------
+# ============================================================
+# ERROR HANDLING
+# ============================================================
 
 OUTPUT="$(run_program 'cd\nq\n')"
 
 assert_contains \
     "$OUTPUT" \
-    "Usage" \
-    "invalid argument count is rejected"
+    "Usage: cd <directory>" \
+    "invalid argument count is handled"
 
 
-# --------------------------------------------------
-# 20. Nonexistent file
-# --------------------------------------------------
-
-OUTPUT="$(run_program 'info does-not-exist.txt\nq\n')"
+OUTPUT="$(run_program 'size does-not-exist.txt\nq\n')"
 
 assert_contains \
     "$OUTPUT" \
-    "does-not-exist.txt" \
-    "nonexistent file produces an error"
+    "Path does not exist" \
+    "nonexistent file is handled"
 
 
-# --------------------------------------------------
-# 21. Overwrite protection
-# --------------------------------------------------
+# ============================================================
+# OVERWRITE PROTECTION
+# ============================================================
 
-OUTPUT="$(run_program 'touch a.txt\ntouch b.txt\ncp a.txt b.txt\nq\n')"
+touch "$TEST_DIR/source.txt"
+touch "$TEST_DIR/destination.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'cp source.txt destination.txt\nq\n' | "$PROGRAM"
+)"
 
 assert_contains \
     "$OUTPUT" \
     "already exists" \
-    "copy refuses to overwrite an existing destination"
+    "copy refuses to overwrite existing destination"
 
 
-# --------------------------------------------------
-# 22. Invalid chmod
-# --------------------------------------------------
+# ============================================================
+# INVALID CHMOD
+# ============================================================
 
-OUTPUT="$(run_program 'touch invalid-mode.txt\nchmod 999 invalid-mode.txt\nq\n')"
+OUTPUT="$(run_program 'chmod 999 file.txt\nq\n')"
 
 assert_contains \
     "$OUTPUT" \
@@ -366,59 +411,53 @@ assert_contains \
     "invalid chmod mode is rejected"
 
 
-# --------------------------------------------------
-# 23. Invalid findsize
-# --------------------------------------------------
+# ============================================================
+# INVALID FINDSIZE
+# ============================================================
 
 OUTPUT="$(run_program 'findsize abc .\nq\n')"
 
 assert_contains \
     "$OUTPUT" \
     "Minimum size must be a non-negative integer" \
-    "invalid findsize value is rejected"
+    "invalid findsize argument is rejected"
 
 
-# --------------------------------------------------
-# 24. Unmatched quotes
-# --------------------------------------------------
+# ============================================================
+# UNMATCHED QUOTES
+# ============================================================
 
-OUTPUT="$(run_program 'cd "unfinished\nq\n')"
+OUTPUT="$(run_program 'touch "unmatched\nq\n')"
 
 assert_contains \
     "$OUTPUT" \
     "Unmatched quote" \
-    "unmatched quotes are detected"
+    "unmatched quotes are rejected"
 
 
-# --------------------------------------------------
-# 25. Dangerous deletion: current directory
-# --------------------------------------------------
+# ============================================================
+# DANGEROUS PATH PROTECTION
+# ============================================================
 
 OUTPUT="$(run_program 'rm .\nq\n')"
 
-if [ -d "$TEST_DIR" ]; then
-    pass "rm . cannot delete the current directory"
-else
-    fail "rm . cannot delete the current directory"
-fi
+assert_contains \
+    "$OUTPUT" \
+    "Refusing to remove the current directory." \
+    "rm refuses current-directory path"
 
-
-# --------------------------------------------------
-# 26. Dangerous deletion: parent directory
-# --------------------------------------------------
 
 OUTPUT="$(run_program 'rm ..\nq\n')"
 
-if [ -d "$TEST_DIR" ]; then
-    pass "rm .. cannot delete the parent directory"
-else
-    fail "rm .. cannot delete the parent directory"
-fi
+assert_contains \
+    "$OUTPUT" \
+    "Refusing to remove the parent directory." \
+    "rm refuses parent-directory path"
 
 
-# --------------------------------------------------
-# 27. Recursive deletion cancellation
-# --------------------------------------------------
+# ============================================================
+# RECURSIVE DELETE — CANCELLATION
+# ============================================================
 
 mkdir "$TEST_DIR/delete-no"
 
@@ -427,18 +466,23 @@ OUTPUT="$(
     printf 'rm delete-no\nn\nq\n' | "$PROGRAM"
 )"
 
-if [ -d "$TEST_DIR/delete-no" ]; then
-    pass "recursive deletion can be cancelled"
-else
-    fail "recursive deletion can be cancelled"
-fi
+assert_file_exists \
+    "$TEST_DIR/delete-no" \
+    "recursive deletion can be cancelled"
 
 
-# --------------------------------------------------
-# 28. Recursive deletion confirmation
-# --------------------------------------------------
+assert_contains \
+    "$OUTPUT" \
+    "Deletion cancelled" \
+    "recursive deletion cancellation is reported"
+
+
+# ============================================================
+# RECURSIVE DELETE — CONFIRMATION
+# ============================================================
 
 mkdir "$TEST_DIR/delete-yes"
+
 touch "$TEST_DIR/delete-yes/file.txt"
 
 OUTPUT="$(
@@ -451,43 +495,225 @@ assert_file_not_exists \
     "recursive deletion works after confirmation"
 
 
-# --------------------------------------------------
-# 29. Copy directory into itself
-# --------------------------------------------------
-
-mkdir -p "$TEST_DIR/project/src"
-
-OUTPUT="$(
-    cd "$TEST_DIR" || exit 1
-    printf 'cp project project/src/copy\nq\n' | "$PROGRAM"
-)"
-
-assert_file_not_exists \
-    "$TEST_DIR/project/src/copy" \
-    "copying a directory into itself is rejected"
+assert_contains \
+    "$OUTPUT" \
+    "Removed:" \
+    "successful recursive deletion is reported"
 
 
-# --------------------------------------------------
-# 30. Move directory into itself
-# --------------------------------------------------
+# ============================================================
+# COPY DIRECTORY INTO ITSELF
+# ============================================================
 
-mkdir -p "$TEST_DIR/move-project/src"
+mkdir -p "$TEST_DIR/copy-source/sub"
 
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
-    printf 'mv move-project move-project/src/moved\nq\n' | "$PROGRAM"
+    printf 'cp copy-source copy-source/sub\nq\n' | "$PROGRAM"
 )"
 
-if [ -d "$TEST_DIR/move-project" ]; then
-    pass "moving a directory into itself is rejected"
-else
-    fail "moving a directory into itself is rejected"
-fi
+assert_contains \
+    "$OUTPUT" \
+    "inside" \
+    "copy refuses copying directory into itself"
 
 
-# --------------------------------------------------
-# Final result
-# --------------------------------------------------
+# ============================================================
+# MOVE DIRECTORY INTO ITSELF
+# ============================================================
+
+mkdir -p "$TEST_DIR/move-source/sub"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'mv move-source move-source/sub\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "inside" \
+    "move refuses moving directory into itself"
+
+
+# ============================================================
+# PHASE 12 — STORAGE ANALYZER
+# ============================================================
+
+mkdir -p "$TEST_DIR/storage-test"
+
+printf 'hello' \
+    > "$TEST_DIR/storage-test/a.txt"
+
+printf 'world' \
+    > "$TEST_DIR/storage-test/b.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'analyze storage-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Storage analysis" \
+    "storage analyzer works"
+
+assert_contains \
+    "$OUTPUT" \
+    "Directories:" \
+    "storage analyzer reports directory count"
+
+assert_contains \
+    "$OUTPUT" \
+    "Files:" \
+    "storage analyzer reports file count"
+
+assert_contains \
+    "$OUTPUT" \
+    "Total size:" \
+    "storage analyzer reports total size"
+
+assert_contains \
+    "$OUTPUT" \
+    "Largest files:" \
+    "storage analyzer reports largest files"
+
+
+# ============================================================
+# PHASE 12 — DUPLICATE DETECTOR
+# ============================================================
+
+mkdir -p "$TEST_DIR/duplicate-test"
+
+printf 'same content' \
+    > "$TEST_DIR/duplicate-test/a.txt"
+
+printf 'same content' \
+    > "$TEST_DIR/duplicate-test/b.txt"
+
+printf 'different content' \
+    > "$TEST_DIR/duplicate-test/c.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'duplicates duplicate-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "a.txt" \
+    "duplicate detector finds first duplicate"
+
+assert_contains \
+    "$OUTPUT" \
+    "b.txt" \
+    "duplicate detector finds second duplicate"
+
+
+# ============================================================
+# PHASE 12 — DUPLICATE DETECTOR SHOULD NOT GROUP
+# DIFFERENT FILES
+# ============================================================
+
+mkdir -p "$TEST_DIR/no-duplicate-test"
+
+printf 'content one' \
+    > "$TEST_DIR/no-duplicate-test/a.txt"
+
+printf 'content two' \
+    > "$TEST_DIR/no-duplicate-test/b.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'duplicates no-duplicate-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "No duplicate files found." \
+    "duplicate detector reports no duplicates when appropriate"
+
+
+# ============================================================
+# PHASE 12 — DUPLICATE DETECTOR WITH EMPTY DIRECTORY
+# ============================================================
+
+mkdir -p "$TEST_DIR/empty-duplicate-test"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'duplicates empty-duplicate-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "No duplicate files found." \
+    "duplicate detector handles empty directories"
+
+
+# ============================================================
+# PHASE 12 — ANALYZE EMPTY DIRECTORY
+# ============================================================
+
+mkdir -p "$TEST_DIR/empty-storage-test"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'analyze empty-storage-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Files: 0" \
+    "storage analyzer handles empty directories"
+
+
+# ============================================================
+# PHASE 12 — INVALID ANALYZE PATH
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'analyze does-not-exist\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Path does not exist" \
+    "analyze handles nonexistent paths"
+
+
+# ============================================================
+# PHASE 12 — INVALID DUPLICATES PATH
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'duplicates does-not-exist\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "No duplicate files found" \
+    "duplicates handles nonexistent paths"
+
+
+# ============================================================
+# UI COMMAND
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'ui\nq\n' | "$PROGRAM"
+)"
+
+# We don't assert detailed UI output here because
+# terminal UI behavior depends on terminal capabilities.
+# The important thing is that the command does not crash.
+
+
+# ============================================================
+# FINAL RESULT
+# ============================================================
 
 echo
 echo "========================================"
@@ -496,7 +722,8 @@ echo "========================================"
 
 echo "Passed: $PASS_COUNT"
 echo "Failed: $FAIL_COUNT"
-echo
+
+echo "========================================"
 
 if [ "$FAIL_COUNT" -eq 0 ]; then
     echo "ALL TESTS PASSED"

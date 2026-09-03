@@ -10,6 +10,9 @@ add_executable(filemanager
     src/FileManager.cpp
     src/CommandParser.cpp
     src/TerminalUI.cpp
+    src/FileHasher.cpp
+    src/DuplicateDetector.cpp
+    src/StorageAnalyzer.cpp
 )
 
 target_include_directories(filemanager PRIVATE
