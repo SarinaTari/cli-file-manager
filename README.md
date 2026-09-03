@@ -1,8 +1,10 @@
 # CLI File Manager
 
-A C++17 command-line file manager built from scratch using `std::filesystem` and Unix/POSIX filesystem features.
+A developer-oriented Unix CLI file manager written in C++17.
 
-The project is being developed progressively to demonstrate practical skills in C++, filesystem programming, command parsing, Unix concepts, software architecture, error handling, testing, and professional software development.
+The project provides filesystem navigation, file operations, metadata inspection, recursive operations, searching, sorting, Unix permissions, hard links, symbolic links, robust error handling, and safety protections.
+
+The goal is to build a serious systems-oriented portfolio project while learning how C++ interacts with the operating system and filesystem.
 
 ---
 
@@ -10,101 +12,91 @@ The project is being developed progressively to demonstrate practical skills in 
 
 ### Navigation
 
-* `ls`
-* `ls -a`
 * `pwd`
 * `cd`
 * `back`
-* `tree`
+* `ls`
+* `ls -a`
+* `ls --files`
+* `ls --dirs`
+* Sorting by name
+* Sorting by size
+* Ascending and descending sorting
 
 ### File Operations
 
-* `mkdir`
-* `touch`
-* `rename`
-* `cp`
-* `mv`
-* `rm`
+* Create directories
+* Create files
+* Rename files and directories
+* Copy files
+* Copy directories recursively
+* Move files and directories
+* Delete files
+* Delete directories recursively with confirmation
 
 ### File Information
 
-* `size`
-* `type`
-* `modified`
-* `info`
+* File size
+* File type
+* Modification time
+* Detailed information
+* Unix permissions
+* Symbolic-link targets
+
+### Recursive Operations
+
+* Directory tree
+* Directory size calculation
 
 ### Search
 
-* `find`
-* `findext`
-* `findsize`
-
-### Sorting and Filtering
-
-* `ls --files`
-* `ls --dirs`
-* `ls --name`
-* `ls --size`
-* `ls --name-desc`
-* `ls --size-desc`
+* Search by filename
+* Search by extension
+* Search by minimum file size
 
 ### Unix Features
 
-* Hidden file support
-* File permission inspection
-* Permission modification with `chmod`
-* Octal permission modes
-* Hard links
-* Symbolic links
-* Symbolic link inspection with `readlink`
-* Recursive deletion confirmation
+* Read Unix permissions
+* Change permissions with `chmod`
+* Create hard links
+* Create symbolic links
+* Read symbolic-link targets
+
+### Phase 9 Safety
+
+* Centralized exception handling
+* Invalid-command detection
+* Argument-count validation
+* Unmatched quote detection
+* Invalid permission validation
+* Invalid size validation
+* Protection against accidental overwrites
+* Protection against copying a directory into itself
+* Protection against moving a directory into itself
+* Protection against deleting the current directory
+* Protection against deleting `.` and `..`
+* Protection against deleting the filesystem root
+* Confirmation before recursive deletion
+* Graceful handling of filesystem errors
+* Graceful handling of EOF / `Ctrl+D`
 
 ---
 
-## Command Reference
+# Commands
 
-### Navigation
+## Navigation
+
+```text
+pwd
+cd <path>
+back
+```
+
+## Listing
 
 ```text
 ls
 ls -a
-pwd
-cd <directory>
-back
-tree [path]
-```
-
-### File Operations
-
-```text
-mkdir <directory>
-touch <file>
-rename <old> <new>
-cp <source> <destination>
-mv <source> <destination>
-rm <path>
-```
-
-### File Information
-
-```text
-size <file>
-type <path>
-modified <path>
-info <path>
-```
-
-### Search
-
-```text
-find <name> [path]
-findext <extension> [path]
-findsize <minimum_bytes> [path]
-```
-
-### Sorting and Filtering
-
-```text
 ls --files
 ls --dirs
 ls --name
@@ -113,197 +105,308 @@ ls --name-desc
 ls --size-desc
 ```
 
-### Unix Features
+Examples:
 
 ```text
-perm <path>
-chmod <mode> <path>
-
-link <target> <link>
-
-ln <target> <link>
-ln -s <target> <link>
-
-readlink <path>
-```
-
-### General
-
-```text
-help
-q
-quit
-exit
+ls
+ls -a
+ls --files
+ls --dirs
+ls --size-desc
 ```
 
 ---
 
-## Examples
-
-### Create and navigate directories
+## File Operations
 
 ```text
-fm> mkdir projects
-fm> cd projects
-fm> pwd
-fm> back
-```
-
-### Create and manipulate files
-
-```text
-fm> touch example.txt
-fm> rename example.txt renamed.txt
-fm> cp renamed.txt backup.txt
-fm> mv backup.txt ..
-```
-
-### Work with paths containing spaces
-
-```text
-fm> mkdir "My Folder"
-fm> cd "My Folder"
-fm> touch "hello world.txt"
-fm> info "hello world.txt"
-```
-
-### Search for files
-
-```text
-fm> find example.txt
-fm> findext cpp
-fm> findsize 1000
-```
-
-### View directory structure
-
-```text
-fm> tree .
+mkdir <name>
+touch <name>
+rename <old> <new>
+cp <source> <destination>
+mv <source> <destination>
+rm <path>
 ```
 
 Example:
 
 ```text
-project
-├── include
-│   ├── FileManager.h
-│   └── CommandParser.h
-├── src
-│   ├── FileManager.cpp
-│   ├── CommandParser.cpp
-│   └── main.cpp
-└── README.md
+mkdir project
+cd project
+touch main.cpp
+rename main.cpp app.cpp
+cp app.cpp backup.cpp
+mv backup.cpp backup/
 ```
 
-### Work with permissions
+Deleting a directory requires confirmation.
+
+---
+
+## Information
 
 ```text
-fm> perm script.sh
-Permissions: rw-r--r--
-
-fm> chmod 755 script.sh
-Permissions changed successfully.
-
-fm> perm script.sh
-Permissions: rwxr-xr-x
+size <file>
+type <path>
+modified <path>
+info <path>
 ```
 
-Common permission modes:
+Example:
 
 ```text
-644 → rw-r--r--
-755 → rwxr-xr-x
-700 → rwx------
-600 → rw-------
+info main.cpp
 ```
 
-### Work with symbolic links
+Possible output:
 
 ```text
-fm> ln -s original.txt shortcut.txt
-fm> readlink shortcut.txt
-Symlink target: original.txt
-
-fm> info shortcut.txt
-```
-
-### Work with hard links
-
-```text
-fm> link original.txt hardcopy.txt
+Name: main.cpp
+Path: /project/main.cpp
+Type: regular file
+Size: 1024 bytes
+Permissions: -rw-r--r--
+Modified: 2026-09-03 12:00:00
 ```
 
 ---
 
-## Architecture
-
-The project follows a simple layered architecture:
+## Recursive Operations
 
 ```text
-                 User
-                  │
-                  ▼
-              main.cpp
-                  │
-                  ▼
-           CommandParser
-                  │
-                  ▼
-            FileManager
-             │        │
-             ▼        ▼
-      std::filesystem  POSIX
-             │        │
-             └────┬───┘
-                  ▼
-            Operating System
+tree
+tree <path>
+du <path>
+```
+
+Example:
+
+```text
+tree .
+```
+
+---
+
+## Search
+
+```text
+find <name> [path]
+findext <extension> [path]
+findsize <minimum_bytes> [path]
+```
+
+Examples:
+
+```text
+find main.cpp
+find main.cpp src
+findext cpp
+findext .cpp src
+findsize 100000 .
+```
+
+---
+
+## Permissions
+
+```text
+perm <path>
+chmod <mode> <path>
+```
+
+Examples:
+
+```text
+perm script.sh
+chmod 755 script.sh
+chmod 644 file.txt
+chmod 600 secret.txt
+```
+
+Permission modes use Unix octal notation.
+
+Examples:
+
+```text
+755
+644
+600
+700
+```
+
+---
+
+## Hard Links
+
+```text
+link <target> <link>
+```
+
+or:
+
+```text
+ln <target> <link>
+```
+
+Example:
+
+```text
+touch original.txt
+link original.txt hardcopy.txt
+```
+
+---
+
+## Symbolic Links
+
+```text
+ln -s <target> <link>
+```
+
+Example:
+
+```text
+ln -s original.txt shortcut.txt
+readlink shortcut.txt
+```
+
+---
+
+# Safety
+
+The file manager deliberately avoids dangerous operations.
+
+For example:
+
+```text
+rm project
+```
+
+will ask for confirmation if `project` is a directory.
+
+The program also prevents:
+
+```text
+rm .
+rm ..
+```
+
+and refuses to delete the current working directory or filesystem root.
+
+The program also prevents operations such as:
+
+```text
+cp project project/src/copy
+```
+
+because copying a directory into itself would create an invalid recursive operation.
+
+Existing destinations are not silently overwritten.
+
+---
+
+# Architecture
+
+The project follows a layered design:
+
+```text
+User
+  ↓
+main.cpp
+  ↓
+CommandParser
+  ↓
+FileManager
+  ↓
+std::filesystem + POSIX APIs
+  ↓
+Operating System
 ```
 
 ### `main.cpp`
 
 Responsible for:
 
-* running the main command loop
-* receiving user input
-* parsing commands
-* validating arguments
-* dispatching commands
+* Running the command loop
+* Dispatching commands
+* Validating command arguments
+* Displaying errors
+* Displaying help
+* Handling EOF / `Ctrl+D`
 
 ### `CommandParser`
 
 Responsible for:
 
-* splitting commands into tokens
-* handling quoted arguments
-* supporting paths containing spaces
-* separating the command from its arguments
+* Splitting commands into tokens
+* Handling quoted paths
+* Detecting unmatched quotes
 
 ### `FileManager`
 
 Responsible for:
 
-* navigation
-* file operations
-* directory operations
-* metadata
-* recursive operations
-* searching
-* sorting
-* filtering
-* permissions
-* hard links
-* symbolic links
+* Filesystem operations
+* Navigation
+* Search
+* Recursive operations
+* Permissions
+* Links
+* Safety checks
+* Path validation
+
+### `std::filesystem`
+
+Provides portable C++17 filesystem functionality.
+
+### POSIX
+
+Used for Unix-specific operations such as:
+
+* `lstat`
+* `chmod`
+* Unix permission inspection
 
 ---
 
-## Project Structure
+# Error Handling
+
+The application uses exception handling to prevent user errors from terminating the program.
+
+The general flow is:
+
+```text
+User Input
+    ↓
+Command Parsing
+    ↓
+Argument Validation
+    ↓
+Path Validation
+    ↓
+Safety Checks
+    ↓
+Filesystem Operation
+    ↓
+Error Handling
+    ↓
+User-Friendly Message
+```
+
+For example:
+
+```text
+cp project project/src/copy
+```
+
+is detected as an unsafe recursive operation before the filesystem operation is performed.
+
+---
+
+# Project Structure
 
 ```text
 cli-file-manager/
-│
-├── build/
-│
-├── docs/
 │
 ├── include/
 │   ├── CommandParser.h
@@ -314,8 +417,6 @@ cli-file-manager/
 │   ├── FileManager.cpp
 │   └── main.cpp
 │
-├── tests/
-│
 ├── CMakeLists.txt
 ├── README.md
 └── .gitignore
@@ -323,274 +424,232 @@ cli-file-manager/
 
 ---
 
-## Technologies
+# Technologies
 
-* **C++17**
-* **CMake**
-* **Standard Library**
-* **`std::filesystem`**
-* **POSIX filesystem APIs**
-* **Git**
-* **GitHub**
+* C++17
+* C++ Standard Library
+* `std::filesystem`
+* POSIX APIs
+* CMake
+* Git
+* GitHub
+* Unix filesystem concepts
 
 ---
 
-## Building
+# Build
 
-Clone the repository and enter the project directory:
+Clone the repository:
 
 ```bash
 git clone https://github.com/SarinaTari/cli-file-manager.git
+```
+
+Enter the project:
+
+```bash
 cd cli-file-manager
 ```
 
-Create the build directory:
+Configure:
 
 ```bash
 cmake -S . -B build
 ```
 
-Build the project:
+Build:
 
 ```bash
 cmake --build build
 ```
 
----
-
-## Running
-
-Run the executable with:
+Run:
 
 ```bash
 ./build/filemanager
 ```
 
-You should see:
+---
 
-```text
-CLI File Manager
-Type 'help' for commands.
+# Phase Progress
 
-fm>
-```
+## Phase 0
 
-Type:
+Project setup
 
-```text
-help
-```
+## Phase 1
 
-to see the available commands.
+Basic navigation and filesystem access
+
+## Phase 2
+
+File operations
+
+## Phase 3
+
+File metadata
+
+## Phase 4
+
+Project architecture
+
+## Phase 5
+
+Recursive filesystem operations
+
+## Phase 6
+
+Command parsing and path handling
+
+## Phase 7
+
+Search, sorting, and filtering
+
+## Phase 8
+
+Unix permissions and links
+
+## Phase 9
+
+Robust error handling and filesystem safety
+
+## Phase 10
+
+Testing
+
+## Phase 11
+
+Interactive terminal UI
+
+## Phase 12
+
+Advanced file-manager functionality
+
+## Phase 13
+
+Developer/project intelligence
+
+## Phase 14
+
+History, undo, and snapshots
+
+## Phase 15
+
+Performance, reliability, and portfolio release
 
 ---
 
-## C++ Concepts Demonstrated
+# Phase 9 Concepts
 
-This project demonstrates practical use of:
+This phase focuses on software reliability and defensive programming.
 
-* Classes and objects
-* Encapsulation
-* Header/source separation
-* Functions
-* References
-* `const`
-* `std::string`
-* `std::vector`
-* `std::filesystem`
-* Iterators
-* Lambdas
-* Algorithms
-* Exception handling
-* Recursion
-* File streams
-* Chrono/time handling
-* Command parsing
-* Path manipulation
-* POSIX APIs
-* File permissions
-* Symbolic links
-* Hard links
+Important concepts include:
+
+* Exceptions
+* `try`
+* `catch`
+* `std::exception`
+* Input validation
+* Defensive programming
+* Error propagation
+* Filesystem errors
+* `std::error_code`
+* Path validation
+* Canonical paths
+* Recursive-operation safety
+* Destructive-operation confirmation
+* Edge cases
+* Graceful failure
 
 ---
 
-## Unix Concepts Demonstrated
+# Design Philosophy
 
-Phase 8 introduces important Unix filesystem concepts:
+The project is not intended to blindly reproduce existing Unix commands.
 
-### File Permissions
+Instead, it aims to provide a safe and developer-oriented filesystem environment.
 
-```text
-rwxr-xr--
-```
+Future versions will introduce:
 
-Permissions are divided into:
-
-```text
-Owner   Group   Others
-rwx     r-x     r--
-```
-
-Numeric permissions use:
-
-```text
-r = 4
-w = 2
-x = 1
-```
-
-For example:
-
-```text
-755
-
-7 = rwx
-5 = r-x
-5 = r-x
-```
-
-Therefore:
-
-```text
-755 = rwxr-xr-x
-```
-
-### Symbolic Links
-
-A symbolic link points to another filesystem path:
-
-```text
-shortcut.txt
-      │
-      ▼
-original.txt
-```
-
-### Hard Links
-
-A hard link provides another directory entry referring to the same underlying file:
-
-```text
-original.txt ───┐
-                │
-                ▼
-          underlying file
-                ▲
-                │
-hardcopy.txt ───┘
-```
+* Duplicate-file detection
+* Storage analysis
+* Git awareness
+* Project detection
+* Operation history
+* Undo
+* Snapshots
+* Interactive terminal UI
+* Developer-oriented filesystem analysis
 
 ---
 
-## Safety
+# Long-Term Goal
 
-The `rm` command protects against accidental recursive deletion.
-
-When deleting a directory:
+The final project will demonstrate practical knowledge of:
 
 ```text
-Warning: this will recursively delete ...
-Continue? (y/n):
+C++
+ ↓
+Object-Oriented Programming
+ ↓
+Standard Library
+ ↓
+Filesystem APIs
+ ↓
+Unix/POSIX
+ ↓
+Operating Systems
+ ↓
+System Programming
+ ↓
+Testing
+ ↓
+Performance
+ ↓
+Software Architecture
 ```
 
-The operation only proceeds when the user enters:
-
-```text
-y
-```
-
-or:
-
-```text
-Y
-```
+The project is developed incrementally so that every phase introduces new engineering concepts.
 
 ---
 
-## Development Phases
+# Project Vision
 
-The project is being developed incrementally.
+The final goal is to turn this from a simple CLI file manager into a:
+
+**Developer-oriented, safe, intelligent Unix file manager.**
+
+Planned advanced capabilities include:
 
 ```text
-Phase 0  → Project setup
-Phase 1  → Navigation
-Phase 2  → File operations
-Phase 3  → File metadata
-Phase 4  → Project architecture
-Phase 5  → Recursive filesystem operations
-Phase 6  → Advanced parsing and path handling
-Phase 7  → Search, sorting and filtering
-Phase 8  → Unix permissions and links
-Phase 9  → Error handling and safety
-Phase 10 → Testing
-Phase 11 → Terminal UI
-Phase 12 → Advanced file-manager features
-Phase 13 → Professional features
-Phase 14 → Performance and reliability
-Phase 15 → Final portfolio release
+Filesystem
+    ├── Navigation
+    ├── File Operations
+    ├── Permissions
+    ├── Links
+    └── Search
+
+Developer Intelligence
+    ├── Project Detection
+    ├── Git Awareness
+    ├── Storage Analysis
+    ├── Duplicate Detection
+    └── Dependency Analysis
+
+Safety
+    ├── Safe Deletion
+    ├── Operation History
+    ├── Undo
+    └── Snapshots
+
+Interface
+    └── Interactive Terminal UI
 ```
 
 ---
 
 ## Current Status
 
-**Phase 8 — Unix Filesystem Features**
+**Phase 9 / 15 — Robust Error Handling & Safety**
 
-Completed:
-
-* Navigation
-* File creation
-* File deletion
-* File copying
-* File moving
-* File renaming
-* Recursive operations
-* File metadata
-* Directory trees
-* Directory size calculation
-* Search
-* Sorting
-* Filtering
-* Quoted paths
-* Hidden files
-* Permission inspection
-* `chmod`
-* Hard links
-* Symbolic links
-* Symlink inspection
-* Recursive deletion confirmation
-
----
-
-## Future Improvements
-
-Planned future development includes:
-
-* More robust error handling
-* Unit and integration testing
-* Automated test environments
-* Improved terminal interface
-* Keyboard navigation
-* Colors and visual feedback
-* Multi-file selection
-* Bulk operations
-* File previews
-* Trash/recycle functionality
-* Undo functionality
-* Bookmarks
-* Command history
-* Configuration files
-* Performance optimization
-* Continuous integration
-* Professional documentation
-* Final portfolio release
-
----
-
-## Goal
-
-The goal of this project is to build a progressively more capable command-line file manager while developing practical knowledge of:
-
-**C++ → Operating Systems → Unix/Linux → Filesystems → Software Architecture → Testing → Performance → Professional Software Development**
-
-The final version is intended to demonstrate these skills through a complete, maintainable, and well-documented C++ project.
+The project currently supports filesystem navigation, file operations, recursive operations, metadata inspection, searching, sorting, filtering, Unix permissions, hard links, symbolic links, robust validation, exception handling, and filesystem safety protections.

@@ -10,12 +10,8 @@ struct Command {
 
 class CommandParser {
 public:
-    static Command parse(
-        const std::string& input
-    );
+    static Command parse(const std::string& input);
 
 private:
-    static std::vector<std::string> tokenize(
-        const std::string& input
-    );
+    static std::vector<std::string> tokenize(const std::string& input);
 };

@@ -1,7 +1,7 @@
 #include "CommandParser.h"
 
 #include <cctype>
-#include <sstream>
+#include <stdexcept>
 
 std::vector<std::string> CommandParser::tokenize(
     const std::string& input
@@ -13,6 +13,7 @@ std::vector<std::string> CommandParser::tokenize(
 
     for (char character : input) {
 
+        // Start or end a quoted section.
         if (character == '"' || character == '\'') {
 
             if (quote == '\0') {
@@ -28,10 +29,11 @@ std::vector<std::string> CommandParser::tokenize(
             continue;
         }
 
-        if (std::isspace(
-                static_cast<unsigned char>(character)
-            ) && quote == '\0') {
-
+        // Whitespace separates arguments outside quotes.
+        if (
+            std::isspace(static_cast<unsigned char>(character))
+            && quote == '\0'
+        ) {
             if (!current.empty()) {
                 tokens.push_back(current);
                 current.clear();
@@ -42,6 +44,13 @@ std::vector<std::string> CommandParser::tokenize(
         }
     }
 
+    // A quote was opened but never closed.
+    if (quote != '\0') {
+        throw std::invalid_argument(
+            "Unmatched quote in command."
+        );
+    }
+
     if (!current.empty()) {
         tokens.push_back(current);
     }
@@ -49,13 +58,10 @@ std::vector<std::string> CommandParser::tokenize(
     return tokens;
 }
 
-Command CommandParser::parse(
-    const std::string& input
-) {
+Command CommandParser::parse(const std::string& input) {
     Command command;
 
-    std::vector<std::string> tokens =
-        tokenize(input);
+    std::vector<std::string> tokens = tokenize(input);
 
     if (tokens.empty()) {
         return command;
@@ -63,10 +69,7 @@ Command CommandParser::parse(
 
     command.action = tokens[0];
 
-    for (std::size_t i = 1;
-         i < tokens.size();
-         ++i) {
-
+    for (std::size_t i = 1; i < tokens.size(); ++i) {
         command.arguments.push_back(tokens[i]);
     }
 

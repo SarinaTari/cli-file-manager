@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <sys/stat.h>
 
 FileManager::FileManager()
@@ -19,46 +20,82 @@ FileManager::FileManager()
 
 void FileManager::list_directory(
     bool show_hidden,
-    const std::string& sort_option
+    const std::string& sort_option,
+    const std::string& filter
 ) const {
 
     try {
         std::vector<fs::directory_entry> entries;
 
         for (const auto& entry :
-             fs::directory_iterator(current_directory)) {
+             fs::directory_iterator(
+                 current_directory,
+                 fs::directory_options::skip_permission_denied
+             )) {
 
             if (!show_hidden && is_hidden(entry.path())) {
+                continue;
+            }
+
+            if (
+                filter == "files"
+                && !fs::is_regular_file(entry.path())
+            ) {
+                continue;
+            }
+
+            if (
+                filter == "dirs"
+                && !fs::is_directory(entry.path())
+            ) {
                 continue;
             }
 
             entries.push_back(entry);
         }
 
-        if (sort_option == "name") {
+        if (
+            sort_option != "name"
+            && sort_option != "name-desc"
+            && sort_option != "size"
+            && sort_option != "size-desc"
+        ) {
+            throw std::invalid_argument(
+                "Invalid sort option."
+            );
+        }
 
+        if (
+            filter != "all"
+            && filter != "files"
+            && filter != "dirs"
+        ) {
+            throw std::invalid_argument(
+                "Invalid filter."
+            );
+        }
+
+        if (
+            sort_option == "name"
+            || sort_option == "name-desc"
+        ) {
             std::sort(
                 entries.begin(),
                 entries.end(),
                 [](const auto& a, const auto& b) {
                     return a.path().filename().string()
-                         < b.path().filename().string();
+                        < b.path().filename().string();
                 }
             );
-        }
-        else if (sort_option == "name-desc") {
 
-            std::sort(
-                entries.begin(),
-                entries.end(),
-                [](const auto& a, const auto& b) {
-                    return a.path().filename().string()
-                         > b.path().filename().string();
-                }
-            );
+            if (sort_option == "name-desc") {
+                std::reverse(
+                    entries.begin(),
+                    entries.end()
+                );
+            }
         }
-        else if (sort_option == "size") {
-
+        else {
             std::sort(
                 entries.begin(),
                 entries.end(),
@@ -67,80 +104,90 @@ void FileManager::list_directory(
                     std::uintmax_t size_a = 0;
                     std::uintmax_t size_b = 0;
 
-                    if (fs::is_regular_file(a.path())) {
-                        size_a = fs::file_size(a.path());
+                    std::error_code ec1;
+                    std::error_code ec2;
+
+                    if (a.is_regular_file(ec1)) {
+                        size_a = a.file_size(ec1);
                     }
 
-                    if (fs::is_regular_file(b.path())) {
-                        size_b = fs::file_size(b.path());
+                    if (b.is_regular_file(ec2)) {
+                        size_b = b.file_size(ec2);
                     }
 
                     return size_a < size_b;
                 }
             );
-        }
-        else if (sort_option == "size-desc") {
 
-            std::sort(
-                entries.begin(),
-                entries.end(),
-                [](const auto& a, const auto& b) {
-
-                    std::uintmax_t size_a = 0;
-                    std::uintmax_t size_b = 0;
-
-                    if (fs::is_regular_file(a.path())) {
-                        size_a = fs::file_size(a.path());
-                    }
-
-                    if (fs::is_regular_file(b.path())) {
-                        size_b = fs::file_size(b.path());
-                    }
-
-                    return size_a > size_b;
-                }
-            );
+            if (sort_option == "size-desc") {
+                std::reverse(
+                    entries.begin(),
+                    entries.end()
+                );
+            }
         }
 
         for (const auto& entry : entries) {
 
-            std::cout
-                << std::left
-                << std::setw(30)
-                << entry.path().filename().string();
+            std::cout << std::left
+                      << std::setw(8);
 
-            if (fs::is_directory(entry.path())) {
-                std::cout << " [DIR]";
+            if (fs::is_symlink(entry.path())) {
+                std::cout << "[LINK]";
             }
-            else if (fs::is_symlink(entry.path())) {
-                std::cout << " [LINK]";
+            else if (fs::is_directory(entry.path())) {
+                std::cout << "[DIR]";
             }
-            else if (fs::is_regular_file(entry.path())) {
+            else {
+                std::cout << "[FILE]";
+            }
 
-                try {
+            std::cout << " ";
+
+            if (fs::is_regular_file(entry.path())) {
+                std::error_code ec;
+                auto size = fs::file_size(
+                    entry.path(),
+                    ec
+                );
+
+                if (!ec) {
                     std::cout
-                        << " "
-                        << fs::file_size(entry.path())
-                        << " bytes";
+                        << std::right
+                        << std::setw(10)
+                        << size
+                        << " bytes ";
                 }
-                catch (...) {
-                    std::cout << " [FILE]";
+                else {
+                    std::cout
+                        << std::right
+                        << std::setw(16)
+                        << "? ";
                 }
             }
+            else {
+                std::cout
+                    << std::right
+                    << std::setw(16)
+                    << " ";
+            }
 
-            std::cout << '\n';
+            std::cout
+                << " "
+                << entry.path().filename().string()
+                << '\n';
         }
+
     }
     catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error listing directory: "
-            << error.what()
-            << '\n';
+        throw std::runtime_error(
+            std::string("Cannot list directory: ")
+            + error.what()
+        );
     }
 }
 
 void FileManager::print_working_directory() const {
-
     std::cout
         << "Current directory: "
         << current_directory
@@ -152,35 +199,27 @@ void FileManager::change_directory(
 ) {
     fs::path target = resolve_path(name);
 
-    try {
-        if (!fs::exists(target)) {
-            std::cerr
-                << "Error: directory does not exist.\n";
-            return;
-        }
+    ensure_exists(target, "Directory");
 
-        if (!fs::is_directory(target)) {
-            std::cerr
-                << "Error: not a directory.\n";
-            return;
-        }
+    std::error_code ec;
 
-        current_directory = fs::canonical(target);
+    if (!fs::is_directory(target, ec) || ec) {
+        throw std::runtime_error(
+            "Not a directory: " + target.string()
+        );
     }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error changing directory: "
-            << error.what()
-            << '\n';
-    }
+
+    current_directory = fs::weakly_canonical(target);
 }
 
 void FileManager::go_back() {
+    fs::path parent = current_directory.parent_path();
 
-    if (current_directory.has_parent_path()) {
-        current_directory =
-            current_directory.parent_path();
+    if (parent.empty()) {
+        return;
     }
+
+    current_directory = parent;
 }
 
 // ============================================================
@@ -190,233 +229,227 @@ void FileManager::go_back() {
 void FileManager::make_directory(
     const std::string& name
 ) {
-    fs::path path = resolve_path(name);
+    fs::path target = resolve_path(name);
 
-    try {
-        if (fs::exists(path)) {
-            std::cerr
-                << "Error: item already exists.\n";
-            return;
-        }
+    ensure_not_exists(
+        target,
+        "Directory"
+    );
 
-        if (fs::create_directory(path)) {
-            std::cout
-                << "Directory created: "
-                << path
-                << '\n';
+    fs::path parent = target.parent_path();
+
+    if (!parent.empty()) {
+        ensure_exists(parent, "Parent directory");
+
+        if (!fs::is_directory(parent)) {
+            throw std::runtime_error(
+                "Parent is not a directory: "
+                + parent.string()
+            );
         }
     }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error creating directory: "
-            << error.what()
-            << '\n';
+
+    if (!fs::create_directory(target)) {
+        throw std::runtime_error(
+            "Failed to create directory: "
+            + target.string()
+        );
     }
+
+    std::cout
+        << "Directory created: "
+        << target.filename()
+        << '\n';
 }
 
 void FileManager::create_file(
     const std::string& name
 ) {
-    fs::path path = resolve_path(name);
+    fs::path target = resolve_path(name);
 
-    try {
-        if (fs::exists(path)) {
-            std::cerr
-                << "Error: item already exists.\n";
-            return;
+    ensure_not_exists(
+        target,
+        "File"
+    );
+
+    fs::path parent = target.parent_path();
+
+    if (!parent.empty()) {
+        ensure_exists(parent, "Parent directory");
+
+        if (!fs::is_directory(parent)) {
+            throw std::runtime_error(
+                "Parent is not a directory: "
+                + parent.string()
+            );
         }
-
-        std::ofstream file(path);
-
-        if (!file) {
-            std::cerr
-                << "Error: could not create file.\n";
-            return;
-        }
-
-        std::cout
-            << "File created: "
-            << path
-            << '\n';
     }
-    catch (const std::exception& error) {
-        std::cerr
-            << "Error creating file: "
-            << error.what()
-            << '\n';
+
+    std::ofstream file(target);
+
+    if (!file) {
+        throw std::runtime_error(
+            "Failed to create file: "
+            + target.string()
+        );
     }
+
+    file.close();
+
+    std::cout
+        << "File created: "
+        << target.filename()
+        << '\n';
 }
 
 void FileManager::rename_item(
     const std::string& old_name,
     const std::string& new_name
 ) {
-    fs::path old_path =
-        resolve_path(old_name);
+    fs::path source = resolve_path(old_name);
+    fs::path destination = resolve_path(new_name);
 
-    fs::path new_path =
-        resolve_path(new_name);
+    ensure_exists(source, "Source");
+    ensure_not_exists(destination, "Destination");
 
-    try {
-        if (!fs::exists(old_path)) {
-            std::cerr
-                << "Error: source does not exist.\n";
-            return;
-        }
-
-        if (fs::exists(new_path)) {
-            std::cerr
-                << "Error: destination already exists.\n";
-            return;
-        }
-
-        fs::rename(old_path, new_path);
-
-        std::cout
-            << "Renamed successfully.\n";
+    if (is_same_path(source, destination)) {
+        throw std::runtime_error(
+            "Source and destination are the same."
+        );
     }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error renaming item: "
-            << error.what()
-            << '\n';
-    }
+
+    fs::rename(source, destination);
+
+    std::cout
+        << "Renamed successfully.\n";
 }
 
 void FileManager::copy_item(
-    const std::string& source,
-    const std::string& destination
+    const std::string& source_name,
+    const std::string& destination_name
 ) {
-    fs::path source_path =
-        resolve_path(source);
+    fs::path source = resolve_path(source_name);
+    fs::path destination = resolve_path(destination_name);
 
-    fs::path destination_path =
-        resolve_path(destination);
+    ensure_exists(source, "Source");
+    ensure_not_exists(destination, "Destination");
 
-    try {
-        if (!fs::exists(source_path)) {
-            std::cerr
-                << "Error: source does not exist.\n";
-            return;
-        }
-
-        if (fs::exists(destination_path)) {
-            std::cerr
-                << "Error: destination already exists.\n";
-            return;
-        }
-
-        if (fs::is_directory(source_path)) {
-
-            fs::copy(
-                source_path,
-                destination_path,
-                fs::copy_options::recursive
-            );
-        }
-        else {
-
-            fs::copy_file(
-                source_path,
-                destination_path
-            );
-        }
-
-        std::cout
-            << "Copied successfully.\n";
+    if (is_same_path(source, destination)) {
+        throw std::runtime_error(
+            "Source and destination are the same."
+        );
     }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error copying item: "
-            << error.what()
-            << '\n';
+
+    if (fs::is_directory(source)) {
+        ensure_not_inside(source, destination);
+
+        fs::copy(
+            source,
+            destination,
+            fs::copy_options::recursive
+        );
     }
+    else {
+        fs::copy_file(
+            source,
+            destination
+        );
+    }
+
+    std::cout
+        << "Copied successfully.\n";
 }
 
 void FileManager::move_item(
-    const std::string& source,
-    const std::string& destination
+    const std::string& source_name,
+    const std::string& destination_name
 ) {
-    fs::path source_path =
-        resolve_path(source);
+    fs::path source = resolve_path(source_name);
+    fs::path destination = resolve_path(destination_name);
 
-    fs::path destination_path =
-        resolve_path(destination);
+    ensure_exists(source, "Source");
+    ensure_not_exists(destination, "Destination");
 
-    try {
-        if (!fs::exists(source_path)) {
-            std::cerr
-                << "Error: source does not exist.\n";
-            return;
-        }
-
-        if (fs::exists(destination_path)) {
-            std::cerr
-                << "Error: destination already exists.\n";
-            return;
-        }
-
-        fs::rename(
-            source_path,
-            destination_path
+    if (is_same_path(source, destination)) {
+        throw std::runtime_error(
+            "Source and destination are the same."
         );
+    }
 
-        std::cout
-            << "Moved successfully.\n";
+    if (fs::is_directory(source)) {
+        ensure_not_inside(source, destination);
     }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error moving item: "
-            << error.what()
-            << '\n';
-    }
+
+    fs::rename(source, destination);
+
+    std::cout
+        << "Moved successfully.\n";
 }
 
 void FileManager::remove_item(
     const std::string& name
 ) {
-    fs::path path = resolve_path(name);
+    fs::path target = resolve_path(name);
 
-    try {
-        if (!fs::exists(path)) {
-            std::cerr
-                << "Error: item does not exist.\n";
+    ensure_exists(target, "Target");
+    ensure_not_dangerous_path(target);
+
+    if (is_same_path(target, current_directory)) {
+        throw std::runtime_error(
+            "Cannot delete the current directory."
+        );
+    }
+
+    if (fs::is_directory(target)) {
+
+        std::cout
+            << "\nWARNING: Recursive deletion\n"
+            << "You are about to delete:\n"
+            << "  " << target << '\n'
+            << "\nThis will delete the directory and "
+               "everything inside it.\n"
+            << "Continue? (y/n): ";
+
+        std::string answer;
+        std::getline(std::cin, answer);
+
+        if (
+            answer != "y"
+            && answer != "Y"
+        ) {
+            std::cout
+                << "Deletion cancelled.\n";
             return;
         }
 
-        if (fs::is_directory(path)) {
+        std::error_code ec;
 
-            std::cout
-                << "Warning: this will recursively delete "
-                << path
-                << ".\n";
+        fs::remove_all(target, ec);
 
-            std::cout
-                << "Continue? (y/n): ";
-
-            std::string answer;
-            std::getline(std::cin, answer);
-
-            if (answer != "y" && answer != "Y") {
-                std::cout
-                    << "Operation cancelled.\n";
-                return;
-            }
-
-            fs::remove_all(path);
-        }
-        else {
-            fs::remove(path);
+        if (ec) {
+            throw std::runtime_error(
+                "Failed to recursively delete: "
+                + std::string(ec.message())
+            );
         }
 
         std::cout
-            << "Removed successfully.\n";
+            << "Directory deleted.\n";
     }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error removing item: "
-            << error.what()
-            << '\n';
+    else {
+        std::error_code ec;
+
+        fs::remove(target, ec);
+
+        if (ec) {
+            throw std::runtime_error(
+                "Failed to delete: "
+                + std::string(ec.message())
+            );
+        }
+
+        std::cout
+            << "Item deleted.\n";
     }
 }
 
@@ -427,158 +460,98 @@ void FileManager::remove_item(
 void FileManager::show_file_size(
     const std::string& name
 ) const {
-    fs::path path = resolve_path(name);
+    fs::path target = resolve_path(name);
 
-    try {
-        if (!fs::exists(path)) {
-            std::cerr
-                << "Error: item does not exist.\n";
-            return;
-        }
+    ensure_exists(target, "File");
 
-        if (!fs::is_regular_file(path)) {
-            std::cerr
-                << "Error: item is not a regular file.\n";
-            return;
-        }
-
-        std::cout
-            << "Size: "
-            << fs::file_size(path)
-            << " bytes\n";
+    if (!fs::is_regular_file(target)) {
+        throw std::runtime_error(
+            "Size is only available for regular files."
+        );
     }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error getting file size: "
-            << error.what()
-            << '\n';
-    }
+
+    std::cout
+        << "Size: "
+        << fs::file_size(target)
+        << " bytes\n";
 }
 
 void FileManager::show_file_type(
     const std::string& name
 ) const {
-    fs::path path = resolve_path(name);
+    fs::path target = resolve_path(name);
 
-    try {
-        if (fs::is_symlink(path)) {
-            std::cout
-                << "Type: Symbolic link\n";
-        }
-        else if (fs::is_directory(path)) {
-            std::cout
-                << "Type: Directory\n";
-        }
-        else if (fs::is_regular_file(path)) {
-            std::cout
-                << "Type: Regular file\n";
-        }
-        else {
-            std::cout
-                << "Type: Other\n";
-        }
+    ensure_exists(target, "Item");
+
+    if (fs::is_symlink(target)) {
+        std::cout << "Type: symbolic link\n";
     }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error getting file type: "
-            << error.what()
-            << '\n';
+    else if (fs::is_directory(target)) {
+        std::cout << "Type: directory\n";
+    }
+    else if (fs::is_regular_file(target)) {
+        std::cout << "Type: regular file\n";
+    }
+    else {
+        std::cout << "Type: other\n";
     }
 }
 
 void FileManager::show_modified_time(
     const std::string& name
 ) const {
-    fs::path path = resolve_path(name);
+    fs::path target = resolve_path(name);
 
-    try {
-        if (!fs::exists(path)) {
-            std::cerr
-                << "Error: item does not exist.\n";
-            return;
-        }
+    ensure_exists(target, "Item");
 
-        std::cout
-            << "Modified: "
-            << format_time(fs::last_write_time(path))
-            << '\n';
-    }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error getting modification time: "
-            << error.what()
-            << '\n';
-    }
+    std::cout
+        << "Modified: "
+        << format_time(fs::last_write_time(target))
+        << '\n';
 }
 
 void FileManager::show_info(
     const std::string& name
 ) const {
-    fs::path path = resolve_path(name);
+    fs::path target = resolve_path(name);
 
-    try {
-        if (!fs::exists(path) &&
-            !fs::is_symlink(path)) {
+    ensure_exists(target, "Item");
 
-            std::cerr
-                << "Error: item does not exist.\n";
-            return;
-        }
+    std::cout
+        << "Name: "
+        << target.filename()
+        << '\n';
 
+    std::cout
+        << "Path: "
+        << target
+        << '\n';
+
+    show_file_type(name);
+
+    if (
+        fs::is_regular_file(target)
+    ) {
         std::cout
-            << "Name: "
-            << path.filename()
-            << '\n';
-
-        if (fs::is_symlink(path)) {
-
-            std::cout
-                << "Type: Symbolic link\n";
-
-            std::cout
-                << "Symlink target: "
-                << fs::read_symlink(path)
-                << '\n';
-        }
-        else if (fs::is_directory(path)) {
-
-            std::cout
-                << "Type: Directory\n";
-        }
-        else if (fs::is_regular_file(path)) {
-
-            std::cout
-                << "Type: Regular file\n";
-
-            std::cout
-                << "Size: "
-                << fs::file_size(path)
-                << " bytes\n";
-        }
-        else {
-
-            std::cout
-                << "Type: Other\n";
-        }
-
-        std::cout
-            << "Permissions: "
-            << permission_string(path)
-            << '\n';
-
-        if (!fs::is_symlink(path)) {
-            std::cout
-                << "Modified: "
-                << format_time(
-                    fs::last_write_time(path)
-                )
-                << '\n';
-        }
+            << "Size: "
+            << fs::file_size(target)
+            << " bytes\n";
     }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error getting information: "
-            << error.what()
+
+    std::cout
+        << "Permissions: "
+        << permission_string(target)
+        << '\n';
+
+    std::cout
+        << "Modified: "
+        << format_time(fs::last_write_time(target))
+        << '\n';
+
+    if (fs::is_symlink(target)) {
+        std::cout
+            << "Link target: "
+            << fs::read_symlink(target)
             << '\n';
     }
 }
@@ -590,128 +563,41 @@ void FileManager::show_info(
 void FileManager::show_tree(
     const std::string& name
 ) const {
-    fs::path path = resolve_path(name);
+    fs::path target = resolve_path(name);
 
-    try {
-        if (!fs::exists(path)) {
-            std::cerr
-                << "Error: path does not exist.\n";
-            return;
-        }
+    ensure_exists(target, "Path");
 
-        std::cout
-            << path.filename()
-            << '\n';
+    std::cout
+        << target.filename().string()
+        << '\n';
 
-        print_tree_recursive(
-            path,
-            ""
-        );
-    }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error displaying tree: "
-            << error.what()
-            << '\n';
-    }
-}
-
-void FileManager::print_tree_recursive(
-    const fs::path& path,
-    const std::string& prefix
-) const {
-
-    if (!fs::is_directory(path)) {
+    if (!fs::is_directory(target)) {
         return;
     }
 
-    std::vector<fs::directory_entry> entries;
-
-    for (const auto& entry :
-         fs::directory_iterator(path)) {
-
-        entries.push_back(entry);
-    }
-
-    for (std::size_t i = 0;
-         i < entries.size();
-         ++i) {
-
-        const bool last =
-            (i == entries.size() - 1);
-
-        std::cout
-            << prefix
-            << (last ? "└── " : "├── ")
-            << entries[i].path().filename()
-            << '\n';
-
-        if (fs::is_directory(entries[i].path()) &&
-            !fs::is_symlink(entries[i].path())) {
-
-            print_tree_recursive(
-                entries[i].path(),
-                prefix + (last ? "    " : "│   ")
-            );
-        }
-    }
+    print_tree_recursive(target, "");
 }
 
 void FileManager::show_directory_size(
     const std::string& name
 ) const {
-    fs::path path = resolve_path(name);
+    fs::path target = resolve_path(name);
 
-    try {
-        if (!fs::exists(path)) {
-            std::cerr
-                << "Error: path does not exist.\n";
-            return;
-        }
+    ensure_exists(target, "Path");
 
-        std::uintmax_t size =
-            calculate_directory_size(path);
-
-        std::cout
-            << "Total size: "
-            << size
-            << " bytes\n";
-    }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error calculating directory size: "
-            << error.what()
-            << '\n';
-    }
-}
-
-std::uintmax_t FileManager::calculate_directory_size(
-    const fs::path& path
-) const {
-
-    if (fs::is_regular_file(path)) {
-        return fs::file_size(path);
-    }
-
-    if (!fs::is_directory(path)) {
-        return 0;
-    }
-
-    std::uintmax_t total = 0;
-
-    for (const auto& entry :
-         fs::directory_iterator(path)) {
-
-        if (fs::is_symlink(entry.path())) {
-            continue;
-        }
-
-        total += calculate_directory_size(
-            entry.path()
+    if (!fs::is_directory(target)) {
+        throw std::runtime_error(
+            "du requires a directory."
         );
     }
 
-    return total;
+    std::uintmax_t total =
+        calculate_directory_size(target);
+
+    std::cout
+        << "Total size: "
+        << total
+        << " bytes\n";
 }
 
 // ============================================================
@@ -720,29 +606,26 @@ std::uintmax_t FileManager::calculate_directory_size(
 
 void FileManager::find_by_name(
     const std::string& name,
-    const std::string& path_string
+    const std::string& path
 ) const {
+    fs::path root = resolve_path(path);
 
-    fs::path start =
-        resolve_path(path_string);
+    ensure_exists(root, "Search path");
+
+    bool found = false;
 
     try {
-        if (!fs::exists(start)) {
-            std::cerr
-                << "Error: search path does not exist.\n";
-            return;
-        }
-
-        bool found = false;
-
-        for (const auto& entry :
-             fs::recursive_directory_iterator(
-                 start,
-                 fs::directory_options::skip_permission_denied
-             )) {
-
-            if (entry.path().filename() == name) {
-
+        for (
+            const auto& entry :
+            fs::recursive_directory_iterator(
+                root,
+                fs::directory_options::skip_permission_denied
+            )
+        ) {
+            if (
+                entry.path().filename().string()
+                == name
+            ) {
                 std::cout
                     << entry.path()
                     << '\n';
@@ -750,57 +633,52 @@ void FileManager::find_by_name(
                 found = true;
             }
         }
-
-        if (!found) {
-            std::cout
-                << "No matching items found.\n";
-        }
     }
     catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error searching: "
-            << error.what()
-            << '\n';
+        throw std::runtime_error(
+            std::string("Search failed: ")
+            + error.what()
+        );
+    }
+
+    if (!found) {
+        std::cout
+            << "No matching files found.\n";
     }
 }
 
 void FileManager::find_by_extension(
     const std::string& extension,
-    const std::string& path_string
+    const std::string& path
 ) const {
+    fs::path root = resolve_path(path);
 
-    fs::path start =
-        resolve_path(path_string);
+    ensure_exists(root, "Search path");
+
+    std::string normalized = extension;
+
+    if (
+        !normalized.empty()
+        && normalized[0] != '.'
+    ) {
+        normalized =
+            "." + normalized;
+    }
+
+    bool found = false;
 
     try {
-        if (!fs::exists(start)) {
-            std::cerr
-                << "Error: search path does not exist.\n";
-            return;
-        }
-
-        std::string wanted = extension;
-
-        if (!wanted.empty() &&
-            wanted[0] != '.') {
-
-            wanted = "." + wanted;
-        }
-
-        bool found = false;
-
-        for (const auto& entry :
-             fs::recursive_directory_iterator(
-                 start,
-                 fs::directory_options::skip_permission_denied
-             )) {
-
-            if (!entry.is_regular_file()) {
-                continue;
-            }
-
-            if (entry.path().extension() == wanted) {
-
+        for (
+            const auto& entry :
+            fs::recursive_directory_iterator(
+                root,
+                fs::directory_options::skip_permission_denied
+            )
+        ) {
+            if (
+                entry.path().extension().string()
+                == normalized
+            ) {
                 std::cout
                     << entry.path()
                     << '\n';
@@ -808,374 +686,253 @@ void FileManager::find_by_extension(
                 found = true;
             }
         }
-
-        if (!found) {
-            std::cout
-                << "No matching files found.\n";
-        }
     }
     catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error searching: "
-            << error.what()
-            << '\n';
+        throw std::runtime_error(
+            std::string("Extension search failed: ")
+            + error.what()
+        );
+    }
+
+    if (!found) {
+        std::cout
+            << "No matching files found.\n";
     }
 }
 
 void FileManager::find_by_size(
     std::uintmax_t minimum_size,
-    const std::string& path_string
+    const std::string& path
 ) const {
+    fs::path root = resolve_path(path);
 
-    fs::path start =
-        resolve_path(path_string);
+    ensure_exists(root, "Search path");
+
+    bool found = false;
 
     try {
-        if (!fs::exists(start)) {
-            std::cerr
-                << "Error: search path does not exist.\n";
-            return;
-        }
+        for (
+            const auto& entry :
+            fs::recursive_directory_iterator(
+                root,
+                fs::directory_options::skip_permission_denied
+            )
+        ) {
+            std::error_code ec;
 
-        bool found = false;
+            if (
+                entry.is_regular_file(ec)
+                && !ec
+            ) {
+                std::uintmax_t size =
+                    entry.file_size(ec);
 
-        for (const auto& entry :
-             fs::recursive_directory_iterator(
-                 start,
-                 fs::directory_options::skip_permission_denied
-             )) {
+                if (
+                    !ec
+                    && size >= minimum_size
+                ) {
+                    std::cout
+                        << entry.path()
+                        << " ("
+                        << size
+                        << " bytes)\n";
 
-            if (!entry.is_regular_file()) {
-                continue;
+                    found = true;
+                }
             }
-
-            if (entry.file_size() >= minimum_size) {
-
-                std::cout
-                    << entry.path()
-                    << " ("
-                    << entry.file_size()
-                    << " bytes)"
-                    << '\n';
-
-                found = true;
-            }
-        }
-
-        if (!found) {
-            std::cout
-                << "No matching files found.\n";
         }
     }
     catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error searching by size: "
-            << error.what()
-            << '\n';
+        throw std::runtime_error(
+            std::string("Size search failed: ")
+            + error.what()
+        );
+    }
+
+    if (!found) {
+        std::cout
+            << "No matching files found.\n";
     }
 }
 
 // ============================================================
-// Phase 8: Permissions
+// Unix permissions and links
 // ============================================================
 
 void FileManager::show_permissions(
     const std::string& name
 ) const {
+    fs::path target = resolve_path(name);
 
-    fs::path path =
-        resolve_path(name);
+    ensure_exists(target, "Item");
 
-    try {
-        if (!fs::exists(path) &&
-            !fs::is_symlink(path)) {
-
-            std::cerr
-                << "Error: item does not exist.\n";
-            return;
-        }
-
-        std::cout
-            << "Permissions: "
-            << permission_string(path)
-            << '\n';
-    }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error reading permissions: "
-            << error.what()
-            << '\n';
-    }
+    std::cout
+        << "Permissions: "
+        << permission_string(target)
+        << '\n';
 }
 
 void FileManager::change_permissions(
     const std::string& mode,
     const std::string& name
 ) const {
+    fs::path target = resolve_path(name);
 
-    fs::path path =
-        resolve_path(name);
+    ensure_exists(target, "Item");
 
-    try {
-        if (!fs::exists(path)) {
-            std::cerr
-                << "Error: item does not exist.\n";
-            return;
-        }
-
-        if (mode.empty()) {
-            std::cerr
-                << "Error: invalid permission mode.\n";
-            return;
-        }
-
-        unsigned int numeric_mode = 0;
-
-        try {
-            std::size_t position = 0;
-
-            numeric_mode =
-                std::stoul(
-                    mode,
-                    &position,
-                    8
-                );
-
-            if (position != mode.size() ||
-                numeric_mode > 0777) {
-
-                std::cerr
-                    << "Error: permission mode must be "
-                    << "an octal value between 000 and 777.\n";
-
-                return;
-            }
-        }
-        catch (...) {
-            std::cerr
-                << "Error: invalid permission mode.\n";
-
-            return;
-        }
-
-        if (::chmod(
-                path.c_str(),
-                static_cast<mode_t>(numeric_mode)
-            ) != 0) {
-
-            std::perror("chmod");
-            return;
-        }
-
-        std::cout
-            << "Permissions changed successfully.\n";
-
-        std::cout
-            << "New permissions: "
-            << permission_string(path)
-            << '\n';
+    if (
+        mode.length() != 3
+    ) {
+        throw std::invalid_argument(
+            "Permission mode must contain exactly "
+            "3 octal digits, e.g. 755."
+        );
     }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error changing permissions: "
-            << error.what()
-            << '\n';
+
+    for (char character : mode) {
+        if (
+            character < '0'
+            || character > '7'
+        ) {
+            throw std::invalid_argument(
+                "Permission mode must contain "
+                "only octal digits (0-7)."
+            );
+        }
     }
+
+    unsigned long numeric_mode =
+        std::stoul(mode, nullptr, 8);
+
+    if (numeric_mode > 0777) {
+        throw std::invalid_argument(
+            "Permission mode must be between 000 and 777."
+        );
+    }
+
+    if (
+        ::chmod(
+            target.c_str(),
+            static_cast<mode_t>(numeric_mode)
+        )
+        != 0
+    ) {
+        throw std::runtime_error(
+            "Failed to change permissions."
+        );
+    }
+
+    std::cout
+        << "Permissions changed to "
+        << mode
+        << ".\n";
+
+    std::cout
+        << "Permissions: "
+        << permission_string(target)
+        << '\n';
 }
-
-std::string FileManager::permission_string(
-    const fs::path& path
-) const {
-
-    struct stat file_stat {};
-
-    if (lstat(
-            path.c_str(),
-            &file_stat
-        ) != 0) {
-
-        return "?????????";
-    }
-
-    std::string result;
-
-    result +=
-        (file_stat.st_mode & S_IRUSR)
-            ? 'r' : '-';
-
-    result +=
-        (file_stat.st_mode & S_IWUSR)
-            ? 'w' : '-';
-
-    result +=
-        (file_stat.st_mode & S_IXUSR)
-            ? 'x' : '-';
-
-    result +=
-        (file_stat.st_mode & S_IRGRP)
-            ? 'r' : '-';
-
-    result +=
-        (file_stat.st_mode & S_IWGRP)
-            ? 'w' : '-';
-
-    result +=
-        (file_stat.st_mode & S_IXGRP)
-            ? 'x' : '-';
-
-    result +=
-        (file_stat.st_mode & S_IROTH)
-            ? 'r' : '-';
-
-    result +=
-        (file_stat.st_mode & S_IWOTH)
-            ? 'w' : '-';
-
-    result +=
-        (file_stat.st_mode & S_IXOTH)
-            ? 'x' : '-';
-
-    return result;
-}
-
-// ============================================================
-// Phase 8: Links
-// ============================================================
 
 void FileManager::create_hard_link(
-    const std::string& target,
+    const std::string& target_name,
     const std::string& link_name
 ) const {
+    fs::path target = resolve_path(target_name);
+    fs::path link_path = resolve_path(link_name);
 
-    fs::path target_path =
-        resolve_path(target);
+    ensure_exists(target, "Target");
+    ensure_not_exists(link_path, "Link");
 
-    fs::path link_path =
-        resolve_path(link_name);
-
-    try {
-        if (!fs::exists(target_path)) {
-            std::cerr
-                << "Error: target does not exist.\n";
-            return;
-        }
-
-        if (fs::exists(link_path)) {
-            std::cerr
-                << "Error: link name already exists.\n";
-            return;
-        }
-
-        if (fs::is_directory(target_path)) {
-            std::cerr
-                << "Error: hard links to directories "
-                << "are not supported.\n";
-            return;
-        }
-
-        fs::create_hard_link(
-            target_path,
-            link_path
+    if (fs::is_directory(target)) {
+        throw std::runtime_error(
+            "Hard links to directories are not allowed."
         );
+    }
 
-        std::cout
-            << "Hard link created successfully.\n";
-    }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error creating hard link: "
-            << error.what()
-            << '\n';
-    }
+    fs::create_hard_link(
+        target,
+        link_path
+    );
+
+    std::cout
+        << "Hard link created.\n";
 }
 
 void FileManager::create_symbolic_link(
-    const std::string& target,
+    const std::string& target_name,
     const std::string& link_name
 ) const {
+    fs::path target = resolve_path(target_name);
+    fs::path link_path = resolve_path(link_name);
 
-    fs::path target_path =
-        resolve_path(target);
+    ensure_exists(target, "Target");
+    ensure_not_exists(link_path, "Link");
 
-    fs::path link_path =
-        resolve_path(link_name);
+    // Keep the target relative to the link when the
+    // user supplied a relative target.
+    fs::path stored_target;
 
-    try {
-        if (fs::exists(link_path)) {
-            std::cerr
-                << "Error: link name already exists.\n";
-            return;
-        }
-
-        fs::create_symlink(
-            target,
-            link_path
-        );
-
-        std::cout
-            << "Symbolic link created successfully.\n";
+    if (fs::path(target_name).is_absolute()) {
+        stored_target = target;
     }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error creating symbolic link: "
-            << error.what()
-            << '\n';
+    else {
+        stored_target = target_name;
     }
+
+    fs::create_symlink(
+        stored_target,
+        link_path
+    );
+
+    std::cout
+        << "Symbolic link created.\n";
 }
 
 void FileManager::show_link_target(
     const std::string& name
 ) const {
+    fs::path target = resolve_path(name);
 
-    fs::path path =
-        resolve_path(name);
+    ensure_exists(target, "Link");
 
-    try {
-        if (!fs::is_symlink(path)) {
-            std::cerr
-                << "Error: item is not a symbolic link.\n";
-            return;
-        }
-
-        std::cout
-            << "Symlink target: "
-            << fs::read_symlink(path)
-            << '\n';
+    if (!fs::is_symlink(target)) {
+        throw std::runtime_error(
+            "Not a symbolic link: "
+            + target.string()
+        );
     }
-    catch (const fs::filesystem_error& error) {
-        std::cerr
-            << "Error reading symbolic link: "
-            << error.what()
-            << '\n';
-    }
+
+    std::cout
+        << "Link target: "
+        << fs::read_symlink(target)
+        << '\n';
 }
 
 // ============================================================
-// Helpers
+// Helper functions
 // ============================================================
 
 std::string FileManager::format_time(
     const fs::file_time_type& file_time
 ) const {
+    using namespace std::chrono;
 
     auto system_time =
-        std::chrono::time_point_cast<
-            std::chrono::system_clock::duration
+        time_point_cast<
+            system_clock::duration
         >(
-            file_time -
-            fs::file_time_type::clock::now() +
-            std::chrono::system_clock::now()
+            file_time
+            - fs::file_time_type::clock::now()
+            + system_clock::now()
         );
 
     std::time_t time =
-        std::chrono::system_clock::to_time_t(
-            system_time
-        );
+        system_clock::to_time_t(system_time);
 
     std::tm* local_time =
         std::localtime(&time);
 
-    if (!local_time) {
+    if (local_time == nullptr) {
         return "Unknown";
     }
 
@@ -1193,6 +950,11 @@ std::string FileManager::format_time(
 fs::path FileManager::resolve_path(
     const std::string& path
 ) const {
+    if (path.empty()) {
+        throw std::invalid_argument(
+            "Path cannot be empty."
+        );
+    }
 
     fs::path input(path);
 
@@ -1205,14 +967,366 @@ fs::path FileManager::resolve_path(
     ).lexically_normal();
 }
 
+std::string FileManager::permission_string(
+    const fs::path& path
+) const {
+    struct stat file_info {};
+
+    if (
+        ::lstat(
+            path.c_str(),
+            &file_info
+        )
+        != 0
+    ) {
+        return "?????????";
+    }
+
+    std::string result;
+
+    if (S_ISDIR(file_info.st_mode)) {
+        result += 'd';
+    }
+    else if (S_ISLNK(file_info.st_mode)) {
+        result += 'l';
+    }
+    else {
+        result += '-';
+    }
+
+    result +=
+        (file_info.st_mode & S_IRUSR)
+        ? 'r' : '-';
+
+    result +=
+        (file_info.st_mode & S_IWUSR)
+        ? 'w' : '-';
+
+    result +=
+        (file_info.st_mode & S_IXUSR)
+        ? 'x' : '-';
+
+    result +=
+        (file_info.st_mode & S_IRGRP)
+        ? 'r' : '-';
+
+    result +=
+        (file_info.st_mode & S_IWGRP)
+        ? 'w' : '-';
+
+    result +=
+        (file_info.st_mode & S_IXGRP)
+        ? 'x' : '-';
+
+    result +=
+        (file_info.st_mode & S_IROTH)
+        ? 'r' : '-';
+
+    result +=
+        (file_info.st_mode & S_IWOTH)
+        ? 'w' : '-';
+
+    result +=
+        (file_info.st_mode & S_IXOTH)
+        ? 'x' : '-';
+
+    return result;
+}
+
 bool FileManager::is_hidden(
     const fs::path& path
 ) const {
-
-    std::string filename =
+    std::string name =
         path.filename().string();
 
-    return
-        !filename.empty() &&
-        filename[0] == '.';
+    return (
+        !name.empty()
+        && name[0] == '.'
+    );
+}
+
+void FileManager::print_tree_recursive(
+    const fs::path& path,
+    const std::string& prefix
+) const {
+    std::vector<fs::directory_entry> entries;
+
+    std::error_code ec;
+
+    for (
+        const auto& entry :
+        fs::directory_iterator(
+            path,
+            fs::directory_options::skip_permission_denied,
+            ec
+        )
+    ) {
+        if (ec) {
+            break;
+        }
+
+        entries.push_back(entry);
+    }
+
+    std::sort(
+        entries.begin(),
+        entries.end(),
+        [](const auto& a, const auto& b) {
+            return a.path().filename().string()
+                < b.path().filename().string();
+        }
+    );
+
+    for (std::size_t i = 0;
+         i < entries.size();
+         ++i) {
+
+        const auto& entry = entries[i];
+
+        bool last =
+            i == entries.size() - 1;
+
+        std::cout
+            << prefix
+            << (last ? "└── " : "├── ")
+            << entry.path().filename().string()
+            << '\n';
+
+        // Never recursively enter symbolic links.
+        if (
+            fs::is_directory(entry.path())
+            && !fs::is_symlink(entry.path())
+        ) {
+            print_tree_recursive(
+                entry.path(),
+                prefix + (
+                    last
+                    ? "    "
+                    : "│   "
+                )
+            );
+        }
+    }
+}
+
+std::uintmax_t FileManager::calculate_directory_size(
+    const fs::path& path
+) const {
+    std::uintmax_t total = 0;
+
+    std::error_code ec;
+
+    for (
+        const auto& entry :
+        fs::recursive_directory_iterator(
+            path,
+            fs::directory_options::skip_permission_denied,
+            ec
+        )
+    ) {
+        if (ec) {
+            break;
+        }
+
+        if (fs::is_symlink(entry.path())) {
+            continue;
+        }
+
+        if (fs::is_regular_file(entry.path())) {
+
+            std::error_code size_error;
+
+            std::uintmax_t size =
+                entry.file_size(size_error);
+
+            if (!size_error) {
+                total += size;
+            }
+        }
+    }
+
+    return total;
+}
+
+// ============================================================
+// Phase 9 safety helpers
+// ============================================================
+
+void FileManager::ensure_exists(
+    const fs::path& path,
+    const std::string& description
+) const {
+    std::error_code ec;
+
+    bool exists =
+        fs::exists(
+            path,
+            ec
+        );
+
+    if (ec) {
+        throw std::runtime_error(
+            description
+            + " cannot be accessed: "
+            + ec.message()
+        );
+    }
+
+    if (!exists) {
+        throw std::runtime_error(
+            description
+            + " does not exist: "
+            + path.string()
+        );
+    }
+}
+
+void FileManager::ensure_not_exists(
+    const fs::path& path,
+    const std::string& description
+) const {
+    std::error_code ec;
+
+    bool exists =
+        fs::exists(
+            path,
+            ec
+        );
+
+    // Important:
+    // broken symlinks are not reported by exists(),
+    // so check symlink status as well.
+    if (
+        !exists
+        && fs::is_symlink(path)
+    ) {
+        exists = true;
+    }
+
+    if (ec) {
+        throw std::runtime_error(
+            description
+            + " cannot be checked: "
+            + ec.message()
+        );
+    }
+
+    if (exists) {
+        throw std::runtime_error(
+            description
+            + " already exists: "
+            + path.string()
+        );
+    }
+}
+
+void FileManager::ensure_not_dangerous_path(
+    const fs::path& path
+) const {
+    fs::path normalized =
+        path.lexically_normal();
+
+    if (
+        normalized == "."
+        || normalized == ".."
+    ) {
+        throw std::runtime_error(
+            "Refusing to delete '.' or '..'."
+        );
+    }
+
+    fs::path absolute_path;
+
+    try {
+        absolute_path =
+            fs::absolute(normalized)
+            .lexically_normal();
+    }
+    catch (...) {
+        throw std::runtime_error(
+            "Could not safely resolve path."
+        );
+    }
+
+    fs::path root =
+        absolute_path.root_path();
+
+    if (absolute_path == root) {
+        throw std::runtime_error(
+            "Refusing to delete the filesystem root."
+        );
+    }
+
+    if (absolute_path == current_directory) {
+        throw std::runtime_error(
+            "Refusing to delete the current directory."
+        );
+    }
+}
+
+void FileManager::ensure_not_inside(
+    const fs::path& source,
+    const fs::path& destination
+) const {
+    fs::path source_absolute =
+        fs::absolute(source)
+        .lexically_normal();
+
+    fs::path destination_absolute =
+        fs::absolute(destination)
+        .lexically_normal();
+
+    auto source_it =
+        source_absolute.begin();
+
+    auto destination_it =
+        destination_absolute.begin();
+
+    while (
+        source_it != source_absolute.end()
+        && destination_it != destination_absolute.end()
+        && *source_it == *destination_it
+    ) {
+        ++source_it;
+        ++destination_it;
+    }
+
+    if (
+        source_it == source_absolute.end()
+    ) {
+        throw std::runtime_error(
+            "Cannot copy or move a directory "
+            "into itself or one of its children."
+        );
+    }
+}
+
+bool FileManager::is_same_path(
+    const fs::path& first,
+    const fs::path& second
+) const {
+    std::error_code ec1;
+    std::error_code ec2;
+
+    fs::path first_canonical =
+        fs::weakly_canonical(
+            first,
+            ec1
+        );
+
+    fs::path second_canonical =
+        fs::weakly_canonical(
+            second,
+            ec2
+        );
+
+    if (!ec1 && !ec2) {
+        return first_canonical
+            == second_canonical;
+    }
+
+    return (
+        first.lexically_normal()
+        == second.lexically_normal()
+    );
 }
