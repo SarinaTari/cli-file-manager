@@ -15,7 +15,8 @@ public:
 
     // Navigation
     void list_directory(
-        const std::string& option = ""
+        bool show_hidden = false,
+        const std::string& sort_option = "name"
     ) const;
 
     void print_working_directory() const;
@@ -81,19 +82,43 @@ public:
     ) const;
 
     // Search
-    void find(
+    void find_by_name(
         const std::string& name,
-        const std::string& start_path = "."
+        const std::string& path = "."
     ) const;
 
-    void find_extension(
+    void find_by_extension(
         const std::string& extension,
-        const std::string& start_path = "."
+        const std::string& path = "."
     ) const;
 
-    void find_size(
+    void find_by_size(
         std::uintmax_t minimum_size,
-        const std::string& start_path = "."
+        const std::string& path = "."
+    ) const;
+
+    // Phase 8: Unix features
+    void show_permissions(
+        const std::string& name
+    ) const;
+
+    void change_permissions(
+        const std::string& mode,
+        const std::string& name
+    ) const;
+
+    void create_hard_link(
+        const std::string& target,
+        const std::string& link_name
+    ) const;
+
+    void create_symbolic_link(
+        const std::string& target,
+        const std::string& link_name
+    ) const;
+
+    void show_link_target(
+        const std::string& name
     ) const;
 
 private:
@@ -105,6 +130,14 @@ private:
         const std::string& path
     ) const;
 
+    std::string permission_string(
+        const fs::path& path
+    ) const;
+
+    bool is_hidden(
+        const fs::path& path
+    ) const;
+
     void print_tree_recursive(
         const fs::path& path,
         const std::string& prefix
@@ -112,21 +145,5 @@ private:
 
     std::uintmax_t calculate_directory_size(
         const fs::path& path
-    ) const;
-
-    // Search helpers
-    void find_recursive(
-        const fs::path& path,
-        const std::string& name
-    ) const;
-
-    void find_extension_recursive(
-        const fs::path& path,
-        const std::string& extension
-    ) const;
-
-    void find_size_recursive(
-        const fs::path& path,
-        std::uintmax_t minimum_size
     ) const;
 };

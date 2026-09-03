@@ -1,6 +1,7 @@
 #include "CommandParser.h"
 
 #include <cctype>
+#include <sstream>
 
 std::vector<std::string> CommandParser::tokenize(
     const std::string& input
@@ -8,42 +9,37 @@ std::vector<std::string> CommandParser::tokenize(
     std::vector<std::string> tokens;
 
     std::string current;
-    bool inside_quotes = false;
-    char quote_character = '\0';
+    char quote = '\0';
 
     for (char character : input) {
 
-        if ((character == '"' || character == '\'') &&
-            !inside_quotes) {
+        if (character == '"' || character == '\'') {
 
-            inside_quotes = true;
-            quote_character = character;
-
-            continue;
-        }
-
-        if (inside_quotes &&
-            character == quote_character) {
-
-            inside_quotes = false;
-            quote_character = '\0';
+            if (quote == '\0') {
+                quote = character;
+            }
+            else if (quote == character) {
+                quote = '\0';
+            }
+            else {
+                current += character;
+            }
 
             continue;
         }
 
         if (std::isspace(
                 static_cast<unsigned char>(character)
-            ) && !inside_quotes) {
+            ) && quote == '\0') {
 
             if (!current.empty()) {
                 tokens.push_back(current);
                 current.clear();
             }
-
-            continue;
         }
-
-        current += character;
+        else {
+            current += character;
+        }
     }
 
     if (!current.empty()) {
