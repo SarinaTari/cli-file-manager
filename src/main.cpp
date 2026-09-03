@@ -16,9 +16,12 @@ void show_help() {
               << "  mkdir <name>               Create directory\n"
               << "  touch <name>               Create empty file\n"
               << "  rename <old> <new>         Rename file or directory\n"
-              << "  cp <source> <destination>  Copy file\n"
+              << "  cp <source> <destination>  Copy file or directory\n"
               << "  mv <source> <destination>  Move file or directory\n"
-              << "  rm <name>                  Remove file or empty directory\n"
+              << "  rm <name>                  Remove file or directory\n"
+              << "\n"
+              << "  tree [path]                Show directory tree\n"
+              << "  du <path>                  Show total size\n"
               << "\n"
               << "  size <file>                Show file size\n"
               << "  type <name>                Show item type\n"
@@ -45,21 +48,35 @@ int main() {
             break;
         }
 
-        Command command = CommandParser::parse(input);
+        Command command =
+            CommandParser::parse(input);
 
         if (command.action.empty()) {
             continue;
         }
 
+        // ----------------------------------------------------
+        // Quit
+        // ----------------------------------------------------
+
         if (command.action == "q" ||
             command.action == "quit") {
+
             std::cout << "Goodbye!\n";
             break;
         }
 
+        // ----------------------------------------------------
+        // Help
+        // ----------------------------------------------------
+
         else if (command.action == "help") {
             show_help();
         }
+
+        // ----------------------------------------------------
+        // Navigation
+        // ----------------------------------------------------
 
         else if (command.action == "ls") {
             if (!command.arguments.empty()) {
@@ -81,7 +98,8 @@ int main() {
 
         else if (command.action == "cd") {
             if (command.arguments.size() != 1) {
-                std::cout << "Usage: cd <directory>\n";
+                std::cout
+                    << "Usage: cd <directory>\n";
             }
             else {
                 file_manager.change_directory(
@@ -99,9 +117,14 @@ int main() {
             }
         }
 
+        // ----------------------------------------------------
+        // Creation
+        // ----------------------------------------------------
+
         else if (command.action == "mkdir") {
             if (command.arguments.size() != 1) {
-                std::cout << "Usage: mkdir <name>\n";
+                std::cout
+                    << "Usage: mkdir <name>\n";
             }
             else {
                 file_manager.make_directory(
@@ -112,7 +135,8 @@ int main() {
 
         else if (command.action == "touch") {
             if (command.arguments.size() != 1) {
-                std::cout << "Usage: touch <name>\n";
+                std::cout
+                    << "Usage: touch <name>\n";
             }
             else {
                 file_manager.create_file(
@@ -121,9 +145,14 @@ int main() {
             }
         }
 
+        // ----------------------------------------------------
+        // File operations
+        // ----------------------------------------------------
+
         else if (command.action == "rename") {
             if (command.arguments.size() != 2) {
-                std::cout << "Usage: rename <old> <new>\n";
+                std::cout
+                    << "Usage: rename <old> <new>\n";
             }
             else {
                 file_manager.rename_item(
@@ -135,10 +164,11 @@ int main() {
 
         else if (command.action == "cp") {
             if (command.arguments.size() != 2) {
-                std::cout << "Usage: cp <source> <destination>\n";
+                std::cout
+                    << "Usage: cp <source> <destination>\n";
             }
             else {
-                file_manager.copy_file(
+                file_manager.copy_item(
                     command.arguments[0],
                     command.arguments[1]
                 );
@@ -147,7 +177,8 @@ int main() {
 
         else if (command.action == "mv") {
             if (command.arguments.size() != 2) {
-                std::cout << "Usage: mv <source> <destination>\n";
+                std::cout
+                    << "Usage: mv <source> <destination>\n";
             }
             else {
                 file_manager.move_item(
@@ -159,7 +190,8 @@ int main() {
 
         else if (command.action == "rm") {
             if (command.arguments.size() != 1) {
-                std::cout << "Usage: rm <name>\n";
+                std::cout
+                    << "Usage: rm <name>\n";
             }
             else {
                 file_manager.remove_item(
@@ -168,9 +200,45 @@ int main() {
             }
         }
 
+        // ----------------------------------------------------
+        // Recursive operations
+        // ----------------------------------------------------
+
+        else if (command.action == "tree") {
+            if (command.arguments.size() > 1) {
+                std::cout
+                    << "Usage: tree [path]\n";
+            }
+            else if (command.arguments.empty()) {
+                file_manager.show_tree();
+            }
+            else {
+                file_manager.show_tree(
+                    command.arguments[0]
+                );
+            }
+        }
+
+        else if (command.action == "du") {
+            if (command.arguments.size() != 1) {
+                std::cout
+                    << "Usage: du <path>\n";
+            }
+            else {
+                file_manager.show_directory_size(
+                    command.arguments[0]
+                );
+            }
+        }
+
+        // ----------------------------------------------------
+        // File information
+        // ----------------------------------------------------
+
         else if (command.action == "size") {
             if (command.arguments.size() != 1) {
-                std::cout << "Usage: size <file>\n";
+                std::cout
+                    << "Usage: size <file>\n";
             }
             else {
                 file_manager.show_file_size(
@@ -181,7 +249,8 @@ int main() {
 
         else if (command.action == "type") {
             if (command.arguments.size() != 1) {
-                std::cout << "Usage: type <name>\n";
+                std::cout
+                    << "Usage: type <name>\n";
             }
             else {
                 file_manager.show_file_type(
@@ -192,7 +261,8 @@ int main() {
 
         else if (command.action == "modified") {
             if (command.arguments.size() != 1) {
-                std::cout << "Usage: modified <name>\n";
+                std::cout
+                    << "Usage: modified <name>\n";
             }
             else {
                 file_manager.show_modified_time(
@@ -203,7 +273,8 @@ int main() {
 
         else if (command.action == "info") {
             if (command.arguments.size() != 1) {
-                std::cout << "Usage: info <name>\n";
+                std::cout
+                    << "Usage: info <name>\n";
             }
             else {
                 file_manager.show_info(
@@ -211,6 +282,10 @@ int main() {
                 );
             }
         }
+
+        // ----------------------------------------------------
+        // Unknown command
+        // ----------------------------------------------------
 
         else {
             std::cout

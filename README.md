@@ -20,9 +20,14 @@ The project is being developed progressively to practice C++, filesystem operati
 * `mkdir <name>` — Create a directory
 * `touch <name>` — Create an empty file
 * `rename <old> <new>` — Rename a file or directory
-* `cp <source> <destination>` — Copy a file
+* `cp <source> <destination>` — Copy a file or directory recursively
 * `mv <source> <destination>` — Move a file or directory
-* `rm <name>` — Remove a file or empty directory
+* `rm <name>` — Remove a file or directory recursively
+
+### Recursive Operations
+
+* `tree [path]` — Display a recursive directory tree
+* `du <path>` — Calculate the total size of a file or directory
 
 ### File Information
 
@@ -358,6 +363,25 @@ Introduced:
 * Separation of concerns
 * Improved project organization
 
+### Phase 5 — Recursive Filesystem Operations
+
+Implemented:
+
+* Recursive directory trees
+* Recursive directory size calculation
+* Recursive directory copying
+* Recursive directory removal
+* Directory moving
+* Improved filesystem operations
+
+Introduced:
+
+* Recursive algorithms
+* `std::filesystem::copy`
+* `std::filesystem::copy_options::recursive`
+* `std::filesystem::remove_all`
+* `std::filesystem::directory_iterator`
+
 ---
 
 ## Design Principles
@@ -457,6 +481,6 @@ This project is being developed as a practical way to strengthen knowledge of:
 
 ## Project Status
 
-**Current Phase: Phase 4 — Refactoring and Architecture**
+**Current Phase: Phase 5 — Recursive Filesystem Operations**
 
 The project is actively being developed and additional functionality will be added in future phases.
