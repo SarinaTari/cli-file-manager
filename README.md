@@ -1,323 +1,289 @@
 # CLI File Manager
 
-A command-line file manager written in C++ using the C++17 standard library and `std::filesystem`.
+A command-line file manager written in C++ using `std::filesystem`.
 
-The project is being developed progressively to practice C++, filesystem operations, software architecture, CMake, Linux/Unix concepts, Git, and GitHub.
-
----
+The project is being developed progressively to demonstrate practical C++ programming, filesystem operations, command parsing, software architecture, error handling, and Git/GitHub workflow.
 
 ## Features
 
 ### Navigation
 
-* `ls` — List directory contents
-* `pwd` — Show the current working directory
-* `cd <directory>` — Change directory
-* `back` — Move to the parent directory
+* List directory contents
+* Show current working directory
+* Change directories
+* Navigate to parent directories
 
-### File and Directory Operations
+### File Operations
 
-* `mkdir <name>` — Create a directory
-* `touch <name>` — Create an empty file
-* `rename <old> <new>` — Rename a file or directory
-* `cp <source> <destination>` — Copy a file or directory recursively
-* `mv <source> <destination>` — Move a file or directory
-* `rm <name>` — Remove a file or directory recursively
-
-### Recursive Operations
-
-* `tree [path]` — Display a recursive directory tree
-* `du <path>` — Calculate the total size of a file or directory
+* Create directories
+* Create files
+* Rename files and directories
+* Copy files and directories
+* Move files and directories
+* Remove files and directories
 
 ### File Information
 
-* `size <file>` — Display the size of a file
-* `type <name>` — Display the type of an item
-* `modified <name>` — Display the last modification time
-* `info <name>` — Display detailed information about an item
+* Show file size
+* Identify file types
+* Show modification time
+* Display detailed file information
 
-### General Commands
+### Recursive Operations
 
-* `help` — Display the available commands
-* `q` — Exit the file manager
+* Display directory trees
+* Calculate directory sizes
+* Recursively copy directories
+* Recursively remove directories
 
----
+### Command Parsing
+
+* Command tokenization
+* Quoted arguments
+* File and directory names containing spaces
+* Relative paths
+* Absolute paths
+* Path normalization
+* Improved argument validation
 
 ## Example
 
-After launching the program:
-
 ```text
 CLI File Manager
+
 Type 'help' for available commands.
 
 > pwd
-/private/tmp
+"/Users/mym1/Documents/Projects/cli-file-manager"
 
-> mkdir projects
-Directory created: projects
+> mkdir "My Projects"
+Directory created: My Projects
 
-> cd projects
+> cd "My Projects"
 
-> touch hello.txt
-File created: hello.txt
+> touch "hello world.txt"
+File created: hello world.txt
 
 > ls
-hello.txt  [0 bytes]
+hello world.txt  [0 bytes]
 
-> info hello.txt
-Name: hello.txt
-Path: "/private/tmp/projects/hello.txt"
+> info "hello world.txt"
+Name: hello world.txt
+Path: ".../My Projects/hello world.txt"
 Type: regular file
 Size: 0 bytes
-Last modified: 2026-09-03 11:30:25
 
-> rename hello.txt hello2.txt
-Renamed hello.txt -> hello2.txt
-
-> q
-Goodbye!
+> cd ..
 ```
 
----
+## Commands
+
+### Navigation
+
+```text
+ls
+pwd
+cd <directory>
+back
+```
+
+### File Operations
+
+```text
+mkdir <directory>
+touch <file>
+rename <old> <new>
+cp <source> <destination>
+mv <source> <destination>
+rm <path>
+```
+
+### Information
+
+```text
+size <file>
+type <path>
+modified <path>
+info <path>
+```
+
+### Recursive Operations
+
+```text
+tree [path]
+du <path>
+```
+
+### Other
+
+```text
+help
+q
+quit
+```
+
+## Quoted Paths
+
+Paths containing spaces can be written using quotes:
+
+```text
+cd "My Folder"
+```
+
+```text
+touch "hello world.txt"
+```
+
+```text
+rename "old file.txt" "new file.txt"
+```
+
+Both single and double quotes are supported:
+
+```text
+touch 'hello world.txt'
+```
+
+## Path Handling
+
+The file manager supports:
+
+### Relative paths
+
+```text
+cd photos
+cd photos/vacation
+cd ..
+```
+
+### Absolute paths
+
+```text
+cd /Users/mym1/Documents
+```
+
+### Current directory
+
+```text
+tree .
+```
+
+Paths are normalized using `std::filesystem::path::lexically_normal()`.
 
 ## Architecture
 
-The project uses a layered structure to separate responsibilities:
+The project follows a simple layered architecture:
 
 ```text
-                    User
-                     │
-                     ▼
-                 main.cpp
-                     │
-                     ▼
-              CommandParser
-                     │
-                     ▼
-                FileManager
-                     │
-                     ▼
-             std::filesystem
-                     │
-                     ▼
-              Operating System
+User
+  ↓
+main.cpp
+  ↓
+CommandParser
+  ↓
+FileManager
+  ↓
+std::filesystem
+  ↓
+Operating System
 ```
 
 ### `main.cpp`
 
 Responsible for:
 
-* Running the main command loop
-* Reading user input
+* Running the command loop
+* Receiving user input
 * Dispatching commands
-* Validating command arguments
-* Displaying help information
+* Validating argument counts
 
 ### `CommandParser`
 
 Responsible for:
 
-* Parsing raw user input
-* Separating the command from its arguments
-* Creating a structured `Command` object
-
-For example:
-
-```text
-rename old.txt new.txt
-```
-
-becomes:
-
-```text
-action:
-rename
-
-arguments:
-old.txt
-new.txt
-```
+* Tokenizing user input
+* Handling quoted arguments
+* Separating commands from arguments
 
 ### `FileManager`
 
-Responsible for filesystem operations, including:
+Responsible for:
 
+* Filesystem operations
 * Directory navigation
-* Creating files
-* Creating directories
-* Renaming
-* Copying
-* Moving
-* Removing
-* File size information
-* File type information
-* Modification timestamps
-* Detailed file information
+* Metadata
+* Recursive operations
+* Path resolution
+* Error handling
 
----
+### `std::filesystem`
+
+Provides the C++ interface to the underlying filesystem.
 
 ## Project Structure
 
 ```text
 cli-file-manager/
-│
+├── build/
+├── docs/
 ├── include/
-│   ├── FileManager.h
-│   └── CommandParser.h
-│
+│   ├── CommandParser.h
+│   └── FileManager.h
 ├── src/
-│   ├── main.cpp
+│   ├── CommandParser.cpp
 │   ├── FileManager.cpp
-│   └── CommandParser.cpp
-│
+│   └── main.cpp
 ├── tests/
-│
 ├── CMakeLists.txt
 ├── README.md
 └── .gitignore
 ```
 
-### `include/`
-
-Contains header files containing class and function declarations.
-
-### `src/`
-
-Contains the C++ source files containing the implementations.
-
-### `tests/`
-
-Reserved for automated tests that will be added in a later phase.
-
-### `build/`
-
-The CMake build directory is generated locally and is intentionally excluded from Git.
-
----
-
 ## Technologies
 
-* **C++**
-* **C++17**
-* **CMake**
-* **C++ Standard Library**
-* **`std::filesystem`**
-* **Git**
-* **GitHub**
-* **Unix/macOS filesystem concepts**
-
----
+* C++
+* C++17
+* CMake
+* `std::filesystem`
+* C++ Standard Library
+* Git
+* GitHub
 
 ## Building
-
-### Requirements
-
-You need:
-
-* A C++17-compatible compiler
-* CMake 3.16 or newer
-* Git
-
-### Configure the project
 
 From the project root:
 
 ```bash
 cmake -S . -B build
-```
-
-### Build
-
-```bash
 cmake --build build
 ```
 
-### Run
+Run the program:
 
 ```bash
 ./build/filemanager
 ```
 
----
-
-## Available Commands
-
-| Command                     | Description                    |
-| --------------------------- | ------------------------------ |
-| `ls`                        | List directory contents        |
-| `pwd`                       | Show current directory         |
-| `cd <dir>`                  | Change directory               |
-| `back`                      | Go to parent directory         |
-| `mkdir <name>`              | Create directory               |
-| `touch <name>`              | Create empty file              |
-| `rename <old> <new>`        | Rename item                    |
-| `cp <source> <destination>` | Copy file                      |
-| `mv <source> <destination>` | Move item                      |
-| `rm <name>`                 | Remove file or empty directory |
-| `size <file>`               | Show file size                 |
-| `type <name>`               | Show item type                 |
-| `modified <name>`           | Show modification time         |
-| `info <name>`               | Show detailed information      |
-| `help`                      | Show available commands        |
-| `q`                         | Exit the program               |
-
----
-
-## Error Handling
-
-The file manager performs basic validation and reports filesystem errors to the user.
-
-Examples include:
-
-* Attempting to enter a directory that does not exist
-* Attempting to enter a regular file
-* Attempting to create an item that already exists
-* Attempting to copy a nonexistent file
-* Attempting to remove a nonexistent item
-* Attempting to remove a non-empty directory
-* Providing an incorrect number of command arguments
-* Entering an unknown command
-
-Example:
-
-```text
-> cd doesnotexist
-Error: directory does not exist.
-```
-
----
-
 ## Development Phases
 
 ### Phase 0 — Project Setup
 
-* Created the CMake project
-* Configured the C++17 build environment
-* Created the initial project structure
-* Set up Git and GitHub
+* CMake project
+* Basic C++ executable
+* Git repository
+* GitHub repository
+* Initial project structure
 
-### Phase 1 — Basic Navigation
-
-Implemented:
+### Phase 1 — Navigation
 
 * `ls`
 * `pwd`
 * `cd`
 * `back`
-* `help`
-* `q`
-
-Introduced:
-
-* `std::filesystem`
-* Filesystem paths
-* Directory iteration
-* Basic command parsing
+* Basic command loop
+* Basic error handling
 
 ### Phase 2 — File Operations
-
-Implemented:
 
 * `mkdir`
 * `touch`
@@ -325,162 +291,90 @@ Implemented:
 * `cp`
 * `mv`
 * `rm`
-
-Improved:
-
-* Error handling
 * Command validation
-* Filesystem manipulation
 
-### Phase 3 — File Information and Metadata
-
-Implemented:
+### Phase 3 — File Information
 
 * File sizes
 * File types
-* Modification timestamps
+* Modification times
 * Detailed file information
 
-Introduced additional filesystem functionality such as:
+### Phase 4 — Architecture
 
-* `std::filesystem::file_size`
-* `std::filesystem::last_write_time`
-* `std::filesystem::is_regular_file`
-* `std::filesystem::is_directory`
-* `std::filesystem::is_symlink`
-
-### Phase 4 — Refactoring and Architecture
-
-Refactored the original single-file implementation into separate components.
-
-Introduced:
-
+* Separated headers and implementations
 * `FileManager` class
 * `CommandParser` class
-* Header/source separation
-* `include/` directory
-* Multi-file CMake configuration
-* Separation of concerns
-* Improved project organization
+* Cleaner project structure
+* Separation of responsibilities
 
 ### Phase 5 — Recursive Filesystem Operations
-
-Implemented:
 
 * Recursive directory trees
 * Recursive directory size calculation
 * Recursive directory copying
-* Recursive directory removal
-* Directory moving
-* Improved filesystem operations
+* Recursive directory deletion
+* `tree`
+* `du`
 
-Introduced:
+### Phase 6 — Command Parsing & Path Handling
 
-* Recursive algorithms
-* `std::filesystem::copy`
-* `std::filesystem::copy_options::recursive`
-* `std::filesystem::remove_all`
-* `std::filesystem::directory_iterator`
-
----
+* Tokenization
+* Quoted arguments
+* Paths containing spaces
+* Relative paths
+* Absolute paths
+* Path normalization
+* Improved filesystem validation
+* Safer filesystem operations
 
 ## Design Principles
 
-The project is being developed with several software engineering principles in mind.
+The project focuses on:
 
-### Separation of Concerns
-
-Different parts of the program have different responsibilities.
-
-```text
-main.cpp
-    ↓
-CommandParser
-    ↓
-FileManager
-    ↓
-std::filesystem
-```
-
-### Encapsulation
-
-Filesystem functionality is encapsulated inside the `FileManager` class rather than being scattered throughout `main.cpp`.
-
-### Interface and Implementation Separation
-
-Declarations are stored in:
-
-```text
-include/
-```
-
-while implementations are stored in:
-
-```text
-src/
-```
-
-For example:
-
-```text
-FileManager.h
-      │
-      │ declaration
-      ▼
-FileManager.cpp
-      │
-      │ implementation
-      ▼
-std::filesystem
-```
-
----
+* Separation of concerns
+* Reusable classes
+* Clear interfaces
+* Error handling
+* Standard C++ facilities
+* Incremental development
+* Testable functionality
+* Clean project organization
 
 ## Future Development
 
-Planned features include:
+Planned future improvements include:
 
-* Recursive directory operations
-* Improved command parsing
-* Support for paths containing spaces
-* Command aliases
-* File searching
-* Sorting directory contents
-* Filtering files
-* File previews
-* Permissions information
-* Symbolic link handling
-* Interactive file selection
-* Configuration files
-* Automated unit tests
-* Cross-platform improvements
-* Improved terminal interface
-* More advanced error handling
-
----
+* More advanced command parsing
+* Search functionality
+* Sorting and filtering
+* File permissions
+* Unix-specific filesystem features
+* Better interactive interface
+* Automated tests
+* Confirmation before destructive operations
+* Configuration support
+* Performance improvements
+* Portfolio-level polish
 
 ## Learning Goals
 
-This project is being developed as a practical way to strengthen knowledge of:
+This project is designed to provide practical experience with:
 
-* C++
+* C++17
 * Object-oriented programming
-* C++ standard library
-* Filesystems
-* Operating system concepts
-* Unix/macOS command-line environments
-* CMake
-* Software architecture
+* Filesystem programming
+* Command-line applications
+* Recursion
+* Path manipulation
+* Parsing
 * Error handling
-* Git
-* GitHub
-* Testing
-* Project organization
-
----
+* CMake
+* Git and GitHub
+* Software architecture
 
 ## Project Status
 
-**Current Phase: Phase 5 — Recursive Filesystem Operations**
+**Current phase: Phase 6 — Command Parsing & Path Handling**
 
-The project is actively being developed and additional functionality will be added in future phases.
+The project is actively being developed phase by phase.

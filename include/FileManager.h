@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 
@@ -52,6 +53,10 @@ public:
 private:
     std::string format_time(
         const fs::file_time_type& file_time
+    ) const;
+
+    fs::path resolve_path(
+        const std::string& path
     ) const;
 
     void print_tree_recursive(
