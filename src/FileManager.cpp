@@ -1579,3 +1579,11 @@ void FileManager::explain_file(
         resolve_path(path)
     );
 }
+
+void FileManager::show_smart_tree(
+    const std::string& path
+) const {
+    SmartTree::show(
+        resolve_path(path)
+    );
+}

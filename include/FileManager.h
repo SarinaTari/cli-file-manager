@@ -8,6 +8,7 @@
 #include "SafeDelete.h"
 #include "ProjectDoctor.h"
 #include "FileExplainer.h"
+#include "SmartTree.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -98,6 +99,10 @@ public:
 
     void show_tree(
         const std::string& name = "."
+    ) const;
+
+    void show_smart_tree(
+        const std::string& path = "."
     ) const;
 
     void show_directory_size(

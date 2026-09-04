@@ -23,6 +23,7 @@ add_executable(filemanager
     src/SafeDelete.cpp
     src/ProjectDoctor.cpp
     src/FileExplainer.cpp
+    src/SmartTree.cpp
 )
 
 target_include_directories(filemanager PRIVATE

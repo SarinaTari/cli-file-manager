@@ -34,6 +34,7 @@ File operations:
   cp <source> <destination>   Copy item
   mv <source> <destination>   Move item
   rm <name>                   Remove item
+  safe rm <path>              Safely preview and remove item
 
 Information:
   size <name>                 Show file size
@@ -41,6 +42,7 @@ Information:
   modified <name>             Show modification time
   info <name>                 Show detailed information
   tree [name]                 Show directory tree
+  tree --smart [path]         Show developer-aware project tree
   du [name]                   Show directory size
 
 Search:
@@ -61,6 +63,8 @@ Advanced filesystem:
 
 Developer intelligence:
   project [path]              Show project dashboard
+  doctor [path]               Check project health
+  why <path>                  Explain a file
   git [path]                  Analyze Git repository
   deps [path]                 Analyze C/C++ dependencies
 
@@ -70,6 +74,16 @@ Interface:
   q                           Quit
   quit                        Quit
   exit                        Quit
+
+History:
+  history                     Show operation history
+  undo                        Undo last operation
+
+Snapshots:
+  snapshot                    Create filesystem snapshot
+  showsnapshot                Show current snapshot
+  diff                        Compare current state with snapshot
+  clearsnapshot               Delete stored snapshot
 
 Examples:
 
@@ -86,8 +100,11 @@ Examples:
   analyze .
   duplicates .
   project .
+  doctor .
+  why src/main.cpp
   git .
   deps .
+  tree --smart .
   ui
 
 )";
@@ -413,20 +430,46 @@ int main() {
                 );
             }
 
-            else if (command.action == "tree") {
-                if (command.arguments.size() > 1) {
-                    throw std::invalid_argument(
-                        "Usage: tree [name]"
-                    );
-                }
+            // --------------------------------------------------
+            // Directory tree
+            // --------------------------------------------------
 
-                if (command.arguments.empty()) {
-                    file_manager.show_tree();
+            else if (command.action == "tree") {
+
+                if (
+                    !command.arguments.empty()
+                    && command.arguments[0] == "--smart"
+                ) {
+                    if (command.arguments.size() > 2) {
+                        throw std::invalid_argument(
+                            "Usage: tree --smart [path]"
+                        );
+                    }
+
+                    const std::string path =
+                        command.arguments.size() == 2
+                            ? command.arguments[1]
+                            : ".";
+
+                    file_manager.show_smart_tree(
+                        path
+                    );
                 }
                 else {
-                    file_manager.show_tree(
-                        command.arguments[0]
-                    );
+                    if (command.arguments.size() > 1) {
+                        throw std::invalid_argument(
+                            "Usage: tree [name]"
+                        );
+                    }
+
+                    if (command.arguments.empty()) {
+                        file_manager.show_tree();
+                    }
+                    else {
+                        file_manager.show_tree(
+                            command.arguments[0]
+                        );
+                    }
                 }
             }
 
@@ -668,7 +711,9 @@ int main() {
                         ? "."
                         : command.arguments[0];
 
-                file_manager.project_doctor(path);
+                file_manager.project_doctor(
+                    path
+                );
             }
 
             // --------------------------------------------------

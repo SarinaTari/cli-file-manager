@@ -1875,6 +1875,372 @@ assert_contains "$OUTPUT" \
     "Usage: why <path>" \
     "why validates extra arguments"
 
+
+# ============================================================
+# PHASE 15.5 — SMART PROJECT TREE
+# ============================================================
+
+SMART_TREE_TEST="$TEST_DIR/smart-tree-test"
+
+mkdir -p "$SMART_TREE_TEST/src"
+mkdir -p "$SMART_TREE_TEST/include"
+mkdir -p "$SMART_TREE_TEST/tests"
+mkdir -p "$SMART_TREE_TEST/docs"
+mkdir -p "$SMART_TREE_TEST/build"
+
+cat > "$SMART_TREE_TEST/src/main.cpp" <<'EOF'
+int main() {
+    return 0;
+}
+EOF
+
+cat > "$SMART_TREE_TEST/src/helper.cpp" <<'EOF'
+void helper() {
+}
+EOF
+
+cat > "$SMART_TREE_TEST/include/helper.h" <<'EOF'
+#pragma once
+
+void helper();
+EOF
+
+cat > "$SMART_TREE_TEST/tests/test_cli.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "test"
+EOF
+
+cat > "$SMART_TREE_TEST/CMakeLists.txt" <<'EOF'
+cmake_minimum_required(VERSION 3.16)
+
+project(smart_tree_test)
+EOF
+
+cat > "$SMART_TREE_TEST/README.md" <<'EOF'
+# Smart Tree Test
+EOF
+
+cat > "$SMART_TREE_TEST/.gitignore" <<'EOF'
+build/
+EOF
+
+
+# ============================================================
+# SMART TREE — BASIC OUTPUT
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'tree --smart smart-tree-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "SMART PROJECT TREE" \
+    "tree --smart displays smart tree"
+
+
+# ============================================================
+# SMART TREE — DIRECTORY CLASSIFICATION
+# ============================================================
+
+assert_contains \
+    "$OUTPUT" \
+    "src  [SOURCE]" \
+    "tree --smart identifies source directory"
+
+assert_contains \
+    "$OUTPUT" \
+    "include  [HEADERS]" \
+    "tree --smart identifies header directory"
+
+assert_contains \
+    "$OUTPUT" \
+    "tests  [TESTS]" \
+    "tree --smart identifies test directory"
+
+assert_contains \
+    "$OUTPUT" \
+    "docs  [DOCUMENTATION]" \
+    "tree --smart identifies documentation directory"
+
+assert_contains \
+    "$OUTPUT" \
+    "build  [BUILD OUTPUT]" \
+    "tree --smart identifies build directory"
+
+
+# ============================================================
+# SMART TREE — FILE CLASSIFICATION
+# ============================================================
+
+assert_contains \
+    "$OUTPUT" \
+    "main.cpp  [ENTRY POINT]" \
+    "tree --smart identifies entry point"
+
+assert_contains \
+    "$OUTPUT" \
+    "helper.cpp  [SOURCE]" \
+    "tree --smart identifies source files"
+
+assert_contains \
+    "$OUTPUT" \
+    "helper.h  [INTERFACE]" \
+    "tree --smart identifies header files"
+
+assert_contains \
+    "$OUTPUT" \
+    "CMakeLists.txt  [BUILD SYSTEM]" \
+    "tree --smart identifies build system"
+
+assert_contains \
+    "$OUTPUT" \
+    "README.md  [DOCUMENTATION]" \
+    "tree --smart identifies documentation"
+
+assert_contains \
+    "$OUTPUT" \
+    ".gitignore  [GIT CONFIG]" \
+    "tree --smart identifies Git configuration"
+
+
+# ============================================================
+# SMART TREE — DEFAULT PATH
+# ============================================================
+
+OUTPUT="$(
+    cd "$SMART_TREE_TEST" || exit 1
+    printf 'tree --smart\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "SMART PROJECT TREE" \
+    "tree --smart uses current directory by default"
+
+
+# ============================================================
+# SMART TREE — SUBDIRECTORY
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'tree --smart smart-tree-test/src\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "main.cpp  [ENTRY POINT]" \
+    "tree --smart works on subdirectories"
+
+
+# ============================================================
+# SMART TREE — NONEXISTENT PATH
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'tree --smart does-not-exist\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Path does not exist" \
+    "tree --smart rejects nonexistent path"
+
+
+# ============================================================
+# SMART TREE — FILE PATH
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'tree --smart smart-tree-test/README.md\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "requires a directory" \
+    "tree --smart rejects file paths"
+
+
+# ============================================================
+# SMART TREE — TOO MANY ARGUMENTS
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'tree --smart one two\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Usage: tree --smart [path]" \
+    "tree --smart validates argument count"
+
+
+# ============================================================
+# PHASE 15.6 — INTEGRATION
+# ============================================================
+
+INTEGRATION_TEST="$TEST_DIR/integration-test"
+
+mkdir -p "$INTEGRATION_TEST/src"
+mkdir -p "$INTEGRATION_TEST/include"
+mkdir -p "$INTEGRATION_TEST/tests"
+mkdir -p "$INTEGRATION_TEST/docs"
+
+cat > "$INTEGRATION_TEST/src/main.cpp" <<'EOF'
+#include "../include/app.h"
+
+int main() {
+    return app();
+}
+EOF
+
+cat > "$INTEGRATION_TEST/include/app.h" <<'EOF'
+#pragma once
+
+int app();
+EOF
+
+cat > "$INTEGRATION_TEST/src/app.cpp" <<'EOF'
+#include "../include/app.h"
+
+int app() {
+    return 0;
+}
+EOF
+
+cat > "$INTEGRATION_TEST/tests/test_app.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "integration test"
+EOF
+
+cat > "$INTEGRATION_TEST/CMakeLists.txt" <<'EOF'
+cmake_minimum_required(VERSION 3.16)
+
+project(integration_test)
+EOF
+
+cat > "$INTEGRATION_TEST/README.md" <<'EOF'
+# Integration Test
+EOF
+
+cat > "$INTEGRATION_TEST/.gitignore" <<'EOF'
+build/
+EOF
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'tree --smart integration-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "SMART PROJECT TREE" \
+    "integration tree works"
+
+assert_contains \
+    "$OUTPUT" \
+    "src  [SOURCE]" \
+    "integration tree identifies src"
+
+assert_contains \
+    "$OUTPUT" \
+    "include  [HEADERS]" \
+    "integration tree identifies include"
+
+assert_contains \
+    "$OUTPUT" \
+    "tests  [TESTS]" \
+    "integration tree identifies tests"
+
+assert_contains \
+    "$OUTPUT" \
+    "CMakeLists.txt  [BUILD SYSTEM]" \
+    "integration tree identifies CMake"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'doctor integration-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "PROJECT HEALTH CHECK" \
+    "integration doctor works"
+
+assert_contains \
+    "$OUTPUT" \
+    "CMakeLists.txt" \
+    "integration doctor checks CMake"
+
+assert_contains \
+    "$OUTPUT" \
+    "src" \
+    "integration doctor checks src"
+
+assert_contains \
+    "$OUTPUT" \
+    "include" \
+    "integration doctor checks include"
+
+assert_contains \
+    "$OUTPUT" \
+    "tests" \
+    "integration doctor checks tests"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'why integration-test/src/main.cpp\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "FILE EXPLAINER" \
+    "integration why works"
+
+assert_contains \
+    "$OUTPUT" \
+    "main.cpp" \
+    "integration why identifies file"
+
+assert_contains \
+    "$OUTPUT" \
+    "C++" \
+    "integration why identifies language"
+
+assert_contains \
+    "$OUTPUT" \
+    "Source code" \
+    "integration why identifies project role"
+
+OUTPUT="$(
+    cd "$INTEGRATION_TEST" || exit 1
+    printf 'snapshot\nshowsnapshot\ndiff\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Snapshot created." \
+    "integration snapshot works"
+
+assert_contains \
+    "$OUTPUT" \
+    "Snapshot differences:" \
+    "integration diff works"
+
+OUTPUT="$(
+    cd "$INTEGRATION_TEST" || exit 1
+    printf 'touch integration-file.txt\nhistory\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "integration-file.txt" \
+    "integration history records operation"
     
 # ============================================================
 # UI COMMAND
