@@ -13,14 +13,9 @@ if [ ! -x "$PROGRAM" ]; then
     exit 1
 fi
 
-# Convert PROGRAM to an absolute path.
 PROGRAM="$(cd "$(dirname "$PROGRAM")" && pwd)/$(basename "$PROGRAM")"
 
-# Create temporary test directory.
 TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/cli-file-manager-test.XXXXXX")"
-
-# macOS can represent /var as /private/var.
-# pwd -P gives us the physical path.
 TEST_DIR="$(cd "$TEST_DIR" && pwd -P)"
 
 cleanup() {
@@ -103,7 +98,6 @@ assert_contains \
     "$TEST_DIR" \
     "pwd shows the current directory"
 
-
 mkdir "$TEST_DIR/navigation"
 
 OUTPUT="$(run_program 'cd navigation\npwd\nq\n')"
@@ -124,20 +118,17 @@ assert_file_exists \
     "$TEST_DIR/file.txt" \
     "touch creates a file"
 
-
 OUTPUT="$(run_program 'mkdir folder\nq\n')"
 
 assert_file_exists \
     "$TEST_DIR/folder" \
     "mkdir creates a directory"
 
-
 OUTPUT="$(run_program 'mkdir "folder with spaces"\nq\n')"
 
 assert_file_exists \
     "$TEST_DIR/folder with spaces" \
     "quoted paths work correctly"
-
 
 OUTPUT="$(run_program 'touch original.txt\nrename original.txt renamed.txt\nq\n')"
 
@@ -149,13 +140,11 @@ assert_file_exists \
     "$TEST_DIR/renamed.txt" \
     "rename creates the new name"
 
-
 OUTPUT="$(run_program 'touch copy-source.txt\ncp copy-source.txt copy.txt\nq\n')"
 
 assert_file_exists \
     "$TEST_DIR/copy.txt" \
     "copy creates a copied file"
-
 
 OUTPUT="$(run_program 'touch move-source.txt\nmv move-source.txt moved.txt\nq\n')"
 
@@ -179,7 +168,6 @@ assert_contains \
     "Size:" \
     "size displays file size"
 
-
 OUTPUT="$(run_program 'touch information.txt\ntype information.txt\nq\n')"
 
 assert_contains \
@@ -187,14 +175,12 @@ assert_contains \
     "Type:" \
     "type displays file type"
 
-
 OUTPUT="$(run_program 'touch information.txt\nmodified information.txt\nq\n')"
 
 assert_contains \
     "$OUTPUT" \
     "Modified:" \
     "modified displays modification time"
-
 
 OUTPUT="$(run_program 'touch detailed.txt\ninfo detailed.txt\nq\n')"
 
@@ -228,7 +214,6 @@ assert_contains \
     "subdirectory" \
     "tree displays directories"
 
-
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
     printf 'du tree-test\nq\n' | "$PROGRAM"
@@ -259,7 +244,6 @@ assert_contains \
     "$OUTPUT" \
     "hello.txt" \
     "find locates files recursively"
-
 
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
@@ -306,7 +290,6 @@ assert_contains \
     "Permissions:" \
     "perm displays permissions"
 
-
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
     printf 'chmod 644 permission.txt\nperm permission.txt\nq\n' | "$PROGRAM"
@@ -332,7 +315,6 @@ OUTPUT="$(
 assert_file_exists \
     "$TEST_DIR/symbolic.txt" \
     "symbolic link is created"
-
 
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
@@ -371,7 +353,6 @@ assert_contains \
     "$OUTPUT" \
     "Usage: cd <directory>" \
     "invalid argument count is handled"
-
 
 OUTPUT="$(run_program 'size does-not-exist.txt\nq\n')"
 
@@ -446,7 +427,6 @@ assert_contains \
     "Refusing to remove the current directory." \
     "rm refuses current-directory path"
 
-
 OUTPUT="$(run_program 'rm ..\nq\n')"
 
 assert_contains \
@@ -470,7 +450,6 @@ assert_file_exists \
     "$TEST_DIR/delete-no" \
     "recursive deletion can be cancelled"
 
-
 assert_contains \
     "$OUTPUT" \
     "Deletion cancelled" \
@@ -493,7 +472,6 @@ OUTPUT="$(
 assert_file_not_exists \
     "$TEST_DIR/delete-yes" \
     "recursive deletion works after confirmation"
-
 
 assert_contains \
     "$OUTPUT" \
@@ -610,8 +588,7 @@ assert_contains \
 
 
 # ============================================================
-# PHASE 12 — DUPLICATE DETECTOR SHOULD NOT GROUP
-# DIFFERENT FILES
+# PHASE 12 — NO DUPLICATES
 # ============================================================
 
 mkdir -p "$TEST_DIR/no-duplicate-test"
@@ -634,7 +611,7 @@ assert_contains \
 
 
 # ============================================================
-# PHASE 12 — DUPLICATE DETECTOR WITH EMPTY DIRECTORY
+# PHASE 12 — DUPLICATE DETECTOR EMPTY DIRECTORY
 # ============================================================
 
 mkdir -p "$TEST_DIR/empty-duplicate-test"
@@ -847,7 +824,6 @@ assert_contains \
     "create_file" \
     "history records file creation"
 
-
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
     printf 'mkdir history-dir\nhistory\nq\n' | "$PROGRAM"
@@ -858,7 +834,6 @@ assert_contains \
     "create_directory" \
     "history records directory creation"
 
-
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
     printf 'touch history-original.txt\nrename history-original.txt history-renamed.txt\nhistory\nq\n' | "$PROGRAM"
@@ -868,7 +843,6 @@ assert_contains \
     "$OUTPUT" \
     "rename" \
     "history records rename"
-
 
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
@@ -988,8 +962,12 @@ assert_file_not_exists \
 # PHASE 14 — EMPTY HISTORY
 # ============================================================
 
+EMPTY_HISTORY_DIR="$TEST_DIR/empty-history"
+
+mkdir "$EMPTY_HISTORY_DIR"
+
 OUTPUT="$(
-    cd "$TEST_DIR" || exit 1
+    cd "$EMPTY_HISTORY_DIR" || exit 1
     printf 'undo\nq\n' | "$PROGRAM"
 )"
 
@@ -1193,7 +1171,6 @@ assert_file_exists \
     "$SAFE_DELETE_TEST" \
     "safe rm cancellation preserves target"
 
-
 assert_contains \
     "$OUTPUT" \
     "Deletion cancelled." \
@@ -1217,7 +1194,6 @@ OUTPUT="$(
 assert_file_not_exists \
     "$SAFE_DELETE_FILE" \
     "safe rm deletes confirmed file"
-
 
 assert_contains \
     "$OUTPUT" \
@@ -1248,7 +1224,6 @@ assert_file_not_exists \
     "$SAFE_DELETE_CONFIRM" \
     "safe rm deletes confirmed directory recursively"
 
-
 assert_contains \
     "$OUTPUT" \
     "Deleted successfully." \
@@ -1272,7 +1247,6 @@ assert_file_exists \
     "$SAFE_DELETE_EMPTY" \
     "safe rm empty confirmation preserves target"
 
-
 assert_contains \
     "$OUTPUT" \
     "Deletion cancelled." \
@@ -1295,7 +1269,6 @@ OUTPUT="$(
 assert_file_exists \
     "$SAFE_DELETE_OTHER" \
     "safe rm invalid confirmation preserves target"
-
 
 assert_contains \
     "$OUTPUT" \
@@ -1450,8 +1423,6 @@ assert_file_exists \
 # ============================================================
 # PHASE 15.3 — PROJECT HEALTH CHECK
 # ============================================================
-
-# Create a clean project structure for doctor tests.
 
 DOCTOR_TEST_DIR="$TEST_DIR/doctor-test"
 
@@ -1686,6 +1657,7 @@ assert_contains \
     "PROJECT HEALTH CHECK" \
     "doctor uses current directory by default"
 
+
 # ============================================================
 # PHASE 15.4 — FILE EXPLAINER
 # ============================================================
@@ -1738,7 +1710,11 @@ git -C "$WHY_TEST" \
     -c user.email="test@example.com" \
     commit -q -m "initial test commit"
 
-# SOURCE FILE
+
+# ============================================================
+# WHY — SOURCE FILE
+# ============================================================
+
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
     printf 'why why-test/src/main.cpp\nq\n' | "$PROGRAM"
@@ -1788,7 +1764,11 @@ assert_contains "$OUTPUT" \
     "Purpose:" \
     "why displays file purpose"
 
-# HEADER FILE
+
+# ============================================================
+# WHY — HEADER FILE
+# ============================================================
+
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
     printf 'why why-test/include/test.h\nq\n' | "$PROGRAM"
@@ -1802,7 +1782,11 @@ assert_contains "$OUTPUT" \
     "Language: C/C++ header" \
     "why identifies header language"
 
-# CMAKE FILE
+
+# ============================================================
+# WHY — CMAKE FILE
+# ============================================================
+
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
     printf 'why why-test/CMakeLists.txt\nq\n' | "$PROGRAM"
@@ -1816,7 +1800,11 @@ assert_contains "$OUTPUT" \
     "Defines how the project is built." \
     "why explains build configuration"
 
-# README
+
+# ============================================================
+# WHY — README
+# ============================================================
+
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
     printf 'why why-test/README.md\nq\n' | "$PROGRAM"
@@ -1826,7 +1814,11 @@ assert_contains "$OUTPUT" \
     "Type: Project documentation" \
     "why identifies documentation"
 
-# CONFIGURATION FILE
+
+# ============================================================
+# WHY — JSON
+# ============================================================
+
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
     printf 'why why-test/config.json\nq\n' | "$PROGRAM"
@@ -1836,7 +1828,11 @@ assert_contains "$OUTPUT" \
     "Type: Configuration / data" \
     "why identifies JSON configuration"
 
-# NONEXISTENT FILE
+
+# ============================================================
+# WHY — INVALID PATH
+# ============================================================
+
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
     printf 'why why-test/does-not-exist.txt\nq\n' | "$PROGRAM"
@@ -1846,7 +1842,11 @@ assert_contains "$OUTPUT" \
     "Path does not exist" \
     "why rejects nonexistent file"
 
-# DIRECTORY
+
+# ============================================================
+# WHY — DIRECTORY
+# ============================================================
+
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
     printf 'why why-test/src\nq\n' | "$PROGRAM"
@@ -1856,7 +1856,11 @@ assert_contains "$OUTPUT" \
     "why currently supports files only" \
     "why rejects directories"
 
-# INVALID ARGUMENTS
+
+# ============================================================
+# WHY — INVALID ARGUMENTS
+# ============================================================
+
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
     printf 'why\nq\n' | "$PROGRAM"
@@ -2132,6 +2136,11 @@ cat > "$INTEGRATION_TEST/.gitignore" <<'EOF'
 build/
 EOF
 
+
+# ============================================================
+# INTEGRATION — SMART TREE
+# ============================================================
+
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
     printf 'tree --smart integration-test\nq\n' | "$PROGRAM"
@@ -2161,6 +2170,11 @@ assert_contains \
     "$OUTPUT" \
     "CMakeLists.txt  [BUILD SYSTEM]" \
     "integration tree identifies CMake"
+
+
+# ============================================================
+# INTEGRATION — DOCTOR
+# ============================================================
 
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
@@ -2192,6 +2206,11 @@ assert_contains \
     "tests" \
     "integration doctor checks tests"
 
+
+# ============================================================
+# INTEGRATION — FILE EXPLAINER
+# ============================================================
+
 OUTPUT="$(
     cd "$TEST_DIR" || exit 1
     printf 'why integration-test/src/main.cpp\nq\n' | "$PROGRAM"
@@ -2217,31 +2236,224 @@ assert_contains \
     "Source code" \
     "integration why identifies project role"
 
+
+# ============================================================
+# INTEGRATION — SNAPSHOT / SHOWSNAPSHOT / DIFF
+#
+# IMPORTANT:
+# All snapshot-related commands must run in ONE process because
+# SnapshotManager currently stores the snapshot in memory.
+# ============================================================
+
 OUTPUT="$(
     cd "$INTEGRATION_TEST" || exit 1
-    printf 'snapshot\nshowsnapshot\ndiff\nq\n' | "$PROGRAM"
+    printf 'snapshot\nshowsnapshot\ntouch integration-added.txt\ndiff\nq\n' \
+        | "$PROGRAM"
 )"
 
 assert_contains \
     "$OUTPUT" \
     "Snapshot created." \
-    "integration snapshot works"
+    "integration snapshot creates snapshot"
+
+assert_contains \
+    "$OUTPUT" \
+    "Entries:" \
+    "integration snapshot reports entries"
+
+assert_contains \
+    "$OUTPUT" \
+    "Snapshot:" \
+    "integration showsnapshot works"
+
+assert_contains \
+    "$OUTPUT" \
+    "main.cpp" \
+    "integration showsnapshot contains main.cpp"
 
 assert_contains \
     "$OUTPUT" \
     "Snapshot differences:" \
     "integration diff works"
 
+assert_contains \
+    "$OUTPUT" \
+    "Added:" \
+    "integration diff detects added file"
+
+assert_contains \
+    "$OUTPUT" \
+    "integration-added.txt" \
+    "integration diff identifies added file"
+
+
+# ============================================================
+# INTEGRATION — HISTORY
+# ============================================================
+
 OUTPUT="$(
     cd "$INTEGRATION_TEST" || exit 1
-    printf 'touch integration-file.txt\nhistory\nq\n' | "$PROGRAM"
+    printf 'touch integration-history.txt\nhistory\nq\n' | "$PROGRAM"
 )"
 
 assert_contains \
     "$OUTPUT" \
-    "integration-file.txt" \
+    "create_file" \
     "integration history records operation"
-    
+
+assert_contains \
+    "$OUTPUT" \
+    "integration-history.txt" \
+    "integration history identifies file"
+
+
+# ============================================================
+# INTEGRATION — UNDO
+# ============================================================
+
+assert_file_exists \
+    "$INTEGRATION_TEST/integration-history.txt" \
+    "integration history file exists before undo"
+
+OUTPUT="$(
+    cd "$INTEGRATION_TEST" || exit 1
+    printf 'touch integration-undo.txt\nundo\nq\n' | "$PROGRAM"
+)"
+
+assert_file_not_exists \
+    "$INTEGRATION_TEST/integration-undo.txt" \
+    "integration undo removes created file"
+
+assert_contains \
+    "$OUTPUT" \
+    "Undone: file creation" \
+    "integration undo reports success"
+
+
+# ============================================================
+# INTEGRATION — SAFE DELETE
+# ============================================================
+
+printf 'temporary integration file' \
+    > "$INTEGRATION_TEST/integration-delete.txt"
+
+OUTPUT="$(
+    cd "$INTEGRATION_TEST" || exit 1
+    printf 'safe rm integration-delete.txt\ny\nq\n' | "$PROGRAM"
+)"
+
+assert_file_not_exists \
+    "$INTEGRATION_TEST/integration-delete.txt" \
+    "integration safe rm deletes file"
+
+assert_contains \
+    "$OUTPUT" \
+    "Deleted successfully." \
+    "integration safe rm reports success"
+
+
+# ============================================================
+# INTEGRATION — PROJECT DASHBOARD
+# ============================================================
+
+OUTPUT="$(
+    cd "$INTEGRATION_TEST" || exit 1
+    printf 'project\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "PROJECT DASHBOARD" \
+    "integration project dashboard works"
+
+assert_contains \
+    "$OUTPUT" \
+    "Total files:" \
+    "integration dashboard reports files"
+
+assert_contains \
+    "$OUTPUT" \
+    "Storage:" \
+    "integration dashboard reports storage"
+
+assert_contains \
+    "$OUTPUT" \
+    "Git:" \
+    "integration dashboard reports Git"
+
+
+# ============================================================
+# INTEGRATION — COMPLETE WORKFLOW
+# ============================================================
+
+rm -rf "$INTEGRATION_TEST/workflow"
+
+OUTPUT="$(
+    cd "$INTEGRATION_TEST" || exit 1
+
+    printf '%s\n' \
+        'mkdir workflow' \
+        'cd workflow' \
+        'mkdir src' \
+        'mkdir include' \
+        'touch src/main.cpp' \
+        'touch include/app.h' \
+        'tree --smart' \
+        'why src/main.cpp' \
+        'snapshot' \
+        'touch extra.txt' \
+        'diff' \
+        'history' \
+        'q' \
+        | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "SMART PROJECT TREE" \
+    "integration workflow reaches smart tree"
+
+assert_contains \
+    "$OUTPUT" \
+    "main.cpp  [ENTRY POINT]" \
+    "integration workflow identifies entry point"
+
+assert_contains \
+    "$OUTPUT" \
+    "FILE EXPLAINER" \
+    "integration workflow reaches file explainer"
+
+assert_contains \
+    "$OUTPUT" \
+    "Language: C++" \
+    "integration workflow identifies language"
+
+assert_contains \
+    "$OUTPUT" \
+    "Snapshot created." \
+    "integration workflow creates snapshot"
+
+assert_contains \
+    "$OUTPUT" \
+    "Snapshot differences:" \
+    "integration workflow performs diff"
+
+assert_contains \
+    "$OUTPUT" \
+    "extra.txt" \
+    "integration workflow detects added file"
+
+assert_contains \
+    "$OUTPUT" \
+    "create_directory" \
+    "integration workflow records directory creation"
+
+assert_contains \
+    "$OUTPUT" \
+    "create_file" \
+    "integration workflow records file creation"
+
+
 # ============================================================
 # UI COMMAND
 # ============================================================
@@ -2253,7 +2465,218 @@ OUTPUT="$(
 
 # We don't assert detailed UI output here because
 # terminal UI behavior depends on terminal capabilities.
-# The important thing is that the command does not crash.
+
+
+# ============================================================
+# PHASE 15.7 — FINAL REGRESSION TESTS
+# ============================================================
+
+
+# ------------------------------------------------------------
+# FINAL — HELP
+# ------------------------------------------------------------
+
+OUTPUT="$(run_program 'help\nq\n')"
+
+assert_contains \
+    "$OUTPUT" \
+    "safe rm <path>" \
+    "help lists safe rm"
+
+assert_contains \
+    "$OUTPUT" \
+    "tree --smart [path]" \
+    "help lists smart tree"
+
+assert_contains \
+    "$OUTPUT" \
+    "doctor [path]" \
+    "help lists doctor"
+
+assert_contains \
+    "$OUTPUT" \
+    "why <path>" \
+    "help lists file explainer"
+
+assert_contains \
+    "$OUTPUT" \
+    "history" \
+    "help lists history"
+
+assert_contains \
+    "$OUTPUT" \
+    "undo" \
+    "help lists undo"
+
+assert_contains \
+    "$OUTPUT" \
+    "snapshot" \
+    "help lists snapshot"
+
+
+# ------------------------------------------------------------
+# FINAL — COMMAND ERROR RECOVERY
+# ------------------------------------------------------------
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'does-not-exist-command\npwd\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "$TEST_DIR" \
+    "program continues after invalid command"
+
+
+# ------------------------------------------------------------
+# FINAL — SAFE DELETE MUST NOT DELETE ON INVALID INPUT
+# ------------------------------------------------------------
+
+FINAL_SAFE_TEST="$TEST_DIR/final-safe-test"
+
+mkdir "$FINAL_SAFE_TEST"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'safe rm final-safe-test\nNO\npwd\nq\n' | "$PROGRAM"
+)"
+
+assert_file_exists \
+    "$FINAL_SAFE_TEST" \
+    "final safe delete protection preserves target"
+
+assert_contains \
+    "$OUTPUT" \
+    "Deletion cancelled." \
+    "final safe delete reports cancellation"
+
+assert_contains \
+    "$OUTPUT" \
+    "$TEST_DIR" \
+    "program continues after safe delete cancellation"
+
+
+# ------------------------------------------------------------
+# FINAL — SNAPSHOT NO DIFFERENCE
+# ------------------------------------------------------------
+
+FINAL_SNAPSHOT_TEST="$TEST_DIR/final-snapshot-test"
+
+mkdir "$FINAL_SNAPSHOT_TEST"
+
+OUTPUT="$(
+    cd "$FINAL_SNAPSHOT_TEST" || exit 1
+    printf 'snapshot\ndiff\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Snapshot created." \
+    "final snapshot creates successfully"
+
+assert_contains \
+    "$OUTPUT" \
+    "No differences." \
+    "final snapshot reports no differences"
+
+
+# ------------------------------------------------------------
+# FINAL — DOCTOR CURRENT DIRECTORY
+# ------------------------------------------------------------
+
+FINAL_DOCTOR_TEST="$TEST_DIR/final-doctor-test"
+
+mkdir -p "$FINAL_DOCTOR_TEST/src"
+mkdir -p "$FINAL_DOCTOR_TEST/include"
+mkdir -p "$FINAL_DOCTOR_TEST/tests"
+
+cat > "$FINAL_DOCTOR_TEST/CMakeLists.txt" <<'EOF'
+cmake_minimum_required(VERSION 3.16)
+project(final_doctor_test)
+EOF
+
+cat > "$FINAL_DOCTOR_TEST/README.md" <<'EOF'
+# Final Doctor Test
+EOF
+
+OUTPUT="$(
+    cd "$FINAL_DOCTOR_TEST" || exit 1
+    printf 'doctor\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "PROJECT HEALTH CHECK" \
+    "final doctor works from current directory"
+
+assert_contains \
+    "$OUTPUT" \
+    "CMakeLists.txt" \
+    "final doctor checks CMake"
+
+
+# ------------------------------------------------------------
+# FINAL — SMART TREE CURRENT DIRECTORY
+# ------------------------------------------------------------
+
+FINAL_TREE_TEST="$TEST_DIR/final-tree-test"
+
+mkdir -p "$FINAL_TREE_TEST/src"
+mkdir -p "$FINAL_TREE_TEST/include"
+
+touch "$FINAL_TREE_TEST/src/main.cpp"
+touch "$FINAL_TREE_TEST/include/final.h"
+
+OUTPUT="$(
+    cd "$FINAL_TREE_TEST" || exit 1
+    printf 'tree --smart\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "SMART PROJECT TREE" \
+    "final smart tree works from current directory"
+
+assert_contains \
+    "$OUTPUT" \
+    "src  [SOURCE]" \
+    "final smart tree identifies source directory"
+
+assert_contains \
+    "$OUTPUT" \
+    "main.cpp  [ENTRY POINT]" \
+    "final smart tree identifies main file"
+
+assert_contains \
+    "$OUTPUT" \
+    "include  [HEADERS]" \
+    "final smart tree identifies headers"
+
+
+# ------------------------------------------------------------
+# FINAL — FILE EXPLAINER CURRENT DIRECTORY
+# ------------------------------------------------------------
+
+OUTPUT="$(
+    cd "$FINAL_TREE_TEST" || exit 1
+    printf 'why src/main.cpp\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "FILE EXPLAINER" \
+    "final file explainer works"
+
+assert_contains \
+    "$OUTPUT" \
+    "Name: main.cpp" \
+    "final file explainer identifies file"
+
+assert_contains \
+    "$OUTPUT" \
+    "Language: C++" \
+    "final file explainer identifies language"
 
 
 # ============================================================

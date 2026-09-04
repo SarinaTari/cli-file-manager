@@ -1,8 +1,8 @@
 # CLI File Manager
 
-A developer-oriented Unix CLI file manager built in **C++17**.
+A developer-focused command-line file manager built in **C++17** for Unix-like systems.
 
-This project started as a simple command-line file manager and was progressively developed into a more capable filesystem tool with navigation, file operations, metadata inspection, recursive analysis, duplicate detection, project detection, Git awareness, dependency analysis, operation history, undo, snapshots, and an interactive terminal interface.
+The project started as a simple filesystem utility and progressively evolved into a developer-oriented tool for navigating, managing, analyzing, and understanding projects directly from the terminal.
 
 ---
 
@@ -10,254 +10,263 @@ This project started as a simple command-line file manager and was progressively
 
 ### 📁 File & Directory Management
 
+* List files and directories
 * Navigate between directories
-* Create files
-* Create directories
+* Create files and directories
+* Remove files and directories
 * Rename files and directories
-* Move files and directories
 * Copy files and directories
-* Delete files and directories
-* Create symbolic links
-* Create hard links
+* Move files and directories
+* Recursive filesystem operations
+* Protection against dangerous paths
+* Protection against accidental overwrites
+* Safe deletion with confirmation
 
-### 🧭 Navigation
+### 🔎 Search & Filtering
 
-* Show current working directory
-* List directory contents
-* Change directories
-* Navigate to parent directories
-* Handle absolute and relative paths
-* Support paths containing spaces
+* Search for files and directories
+* Filter filesystem entries
+* Sort directory contents
+* Search recursively
+* Find files by size
+* Improved path handling
+* Support for quoted paths
 
-### 📊 File Metadata
+### 📊 File Information
 
-Inspect filesystem information including:
+Display detailed information about files and directories:
 
-* File size
 * File type
+* File size
 * Permissions
-* Last modification time
-* Directory status
-* Symbolic-link information
+* Modification time
+* Directory information
+* Symbolic link information
+* Other filesystem metadata
 
-### 🌳 Recursive Filesystem Operations
+### 🔐 Unix Filesystem Support
 
-The file manager can work recursively with directory trees.
+The application supports Unix filesystem concepts including:
 
-Examples include:
+* File permissions
+* Permission modification
+* Symbolic links
+* Hard links
+* Permission inspection
+* Link detection
+* Unix-style filesystem metadata
 
-* Recursive listing
-* Recursive deletion
-* Recursive copying
-* Directory statistics
-* Storage analysis
+### 💾 Storage Analysis
 
-### 🔎 Search, Sorting & Filtering
+Analyze how storage is being used by a project or directory.
 
-Search and organize filesystem entries using:
+Features include:
 
-* Name-based searching
-* Recursive searching
-* File-type filtering
-* Size filtering
-* Sorting
-* Directory/file filtering
-
-### 💾 Storage Analyzer
-
-Analyze a directory and determine:
-
-* Number of files
-* Number of directories
-* Total storage usage
+* Recursive storage analysis
+* File size statistics
+* Directory size statistics
 * Largest files
-* Storage distribution
+* Storage summaries
+* Duplicate file detection
 
 ### 🧬 Duplicate Detection
 
-Detect duplicate files by:
+Find files that contain identical data.
 
-1. Grouping files by size
-2. Hashing candidate files
-3. Comparing file contents
+The duplicate detector uses file hashing to identify files with the same contents rather than relying only on filenames.
 
-This reduces unnecessary comparisons and makes duplicate detection more efficient.
+### 🧠 Developer Intelligence
 
-### 🧠 Developer Project Detection
+The file manager can inspect a project and identify useful development information.
 
-Automatically identify common project types.
+It can detect:
 
-Supported project indicators include:
+* Git repositories
+* Git status
+* Project structure
+* Programming languages
+* Source directories
+* Header directories
+* Test directories
+* Build systems
+* Dependencies
+* Project-related files
 
-* C/C++ + CMake
-* C/C++ + Make
-* Python
-* Rust
-* Java/Maven
-* Java/Gradle
-* Node.js
+### 🌿 Git Intelligence
 
-The tool also provides basic project statistics and detected project indicators.
+Git-aware functionality includes:
 
-### 🔧 Git Awareness
+* Git repository detection
+* Git status
+* Git-tracked file detection
+* Project Git information
 
-For Git repositories, the application can inspect:
+### 🔗 Dependency Analysis
 
-* Whether the directory is inside a Git repository
-* Repository root
-* Current branch
-* Latest commit
-* Staged files
-* Modified files
-* Untracked files
+The application can analyze source files and detect relationships such as local C/C++ header includes.
 
-### 🔗 C/C++ Dependency Analysis
+This provides a basic view of how source files depend on one another.
 
-Analyze C/C++ source files and inspect:
+### 🕐 Operation History
 
-* `#include` relationships
-* Included headers
-* Number of source files
-* Include frequencies
+Filesystem operations can be recorded in an operation history.
 
-This provides a basic view of project dependencies directly from the terminal.
+Supported functionality includes:
 
-### 🕘 Operation History
-
-The application records supported filesystem operations during a session.
-
-History entries contain:
-
-* Operation type
-* Source path
-* Destination path when applicable
-
-Example:
-
-```text
-Operation history:
-
-1. create_file /path/to/file.txt
-2. create_directory /path/to/project
-3. rename /path/to/old.txt -> /path/to/new.txt
-4. move /path/to/source.txt -> /path/to/destination.txt
-```
+* View operation history
+* Track filesystem operations
+* Undo supported operations
+* Clear history
 
 ### ↩️ Undo
 
-Supported operations can be undone safely.
+The project includes an undo system for supported filesystem operations.
 
-Currently supported:
-
-* File creation
-* Directory creation
-* Rename
-* Move
-
-The undo system uses the paths stored when the operation occurred rather than relying on the user's current directory.
-
-For safety:
-
-* Existing files are not blindly overwritten
-* Non-empty directories are not recursively deleted during undo
-* Unsupported operations are not incorrectly marked as undoable
-* Failed undo operations remain in history
+This provides a foundation for safer filesystem manipulation and reversible developer workflows.
 
 ### 📸 Snapshots
 
-Create an in-memory snapshot of a directory tree.
+Create a snapshot of a project's filesystem state and compare the current state against it.
 
-Snapshots can be used to detect:
+Supported functionality:
 
-* Added files
-* Removed files
-* Changed file sizes
+* Create snapshots
+* View snapshots
+* Compare current filesystem state with a snapshot
+* Detect added entries
+* Detect removed entries
+* Detect changed entries
 
-Example:
+### 🛠️ Project Dashboard
 
-```text
-Snapshot:
-
-/project
-/project/main.cpp
-/project/include
-/project/include/FileManager.h
-```
-
-After changing the directory:
+Use:
 
 ```text
-Added:
-    /project/new_file.cpp
-
-Removed:
-    /project/old_file.cpp
+project
 ```
 
-> Snapshot comparison currently uses file metadata and size rather than full content hashing.
+to get a high-level overview of a project.
 
-### 🖥️ Interactive Terminal UI
+The dashboard can display information such as:
 
-The project includes an interactive terminal interface that allows commands to be entered continuously without restarting the application.
+* Total files
+* Total directories
+* Storage usage
+* Git information
+* Programming languages
+* Project structure
 
-Example:
+### 🩺 Project Health Check
+
+Use:
 
 ```text
-Current directory: "/Users/user/project"
-
-> ls
-> cd src
-> info main.cpp
-> touch test.cpp
-> history
-> undo
-> q
+doctor
 ```
+
+to inspect the health of a project.
+
+The health checker verifies important project components such as:
+
+* `CMakeLists.txt`
+* `src/`
+* `include/`
+* `tests/`
+* `README.md`
+* Git repository
+* Git status
+
+It reports passed checks, warnings, errors, and an overall summary.
+
+### 💡 File Explainer
+
+Use:
+
+```text
+why <path>
+```
+
+to understand the role of a file inside a project.
+
+For example:
+
+```text
+why src/main.cpp
+```
+
+The file explainer can identify:
+
+* File type
+* Programming language
+* Project role
+* Related files
+* Related headers
+* Git status
+* Whether the file is tracked
+* A short explanation of the file's purpose
+
+### 🌳 Smart Project Tree
+
+Use:
+
+```text
+tree --smart
+```
+
+to display a project-oriented filesystem tree.
+
+Instead of showing only filenames, the smart tree classifies project components such as:
+
+```text
+src/          [SOURCE]
+include/      [HEADERS]
+tests/        [TESTS]
+docs/         [DOCUMENTATION]
+build/        [BUILD OUTPUT]
+.git/         [GIT METADATA]
+CMakeLists.txt [BUILD SYSTEM]
+main.cpp      [ENTRY POINT]
+```
+
+This makes large development projects easier to understand from the terminal.
 
 ---
 
 # 🏗️ Architecture
 
-The project follows a layered structure:
+The project follows a layered architecture.
 
 ```text
-                User
-                  │
-                  ▼
-             ┌─────────┐
-             │  main   │
-             └────┬────┘
-                  │
-                  ▼
-          ┌───────────────┐
-          │ CommandParser │
-          └───────┬───────┘
-                  │
-                  ▼
-          ┌───────────────┐
-          │  FileManager  │
-          └───────┬───────┘
-                  │
-        ┌─────────┼──────────┐
-        ▼         ▼          ▼
-   filesystem    POSIX    Specialized
-                          analyzers
-                              │
-        ┌─────────────────────┼────────────────────┐
-        ▼          ▼          ▼          ▼         ▼
-   Duplicate   Storage    Project      Git    Dependency
-   Detector    Analyzer   Detector   Analyzer   Analyzer
+                    ┌──────────────────┐
+                    │     main.cpp     │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │  CommandParser   │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │   FileManager    │
+                    └────────┬─────────┘
+                             │
+          ┌──────────────────┼────────────────────┐
+          │                  │                    │
+          ▼                  ▼                    ▼
+   ┌─────────────┐   ┌──────────────┐   ┌─────────────────┐
+   │ Filesystem  │   │ Developer    │   │ Terminal UI     │
+   │ Operations  │   │ Intelligence │   │                 │
+   └─────────────┘   └──────────────┘   └─────────────────┘
+          │                  │
+          ▼                  ▼
+   std::filesystem       Git / Analysis
+          │
+          ▼
+     Operating System
 ```
 
-The main idea is to separate:
-
-* Command parsing
-* Filesystem operations
-* Analysis functionality
-* History/undo
-* User interface
-
-This makes the project easier to extend and maintain.
+The main application coordinates commands while specialized components handle individual responsibilities.
 
 ---
 
@@ -274,107 +283,100 @@ cli-file-manager/
 │   ├── CommandParser.h
 │   ├── FileManager.h
 │   ├── TerminalUI.h
-│   │
 │   ├── FileHasher.h
 │   ├── DuplicateDetector.h
 │   ├── StorageAnalyzer.h
-│   │
 │   ├── ProjectDetector.h
 │   ├── GitAnalyzer.h
 │   ├── DependencyAnalyzer.h
-│   │
 │   ├── HistoryManager.h
 │   ├── UndoManager.h
-│   └── SnapshotManager.h
+│   ├── SnapshotManager.h
+│   ├── ProjectDashboard.h
+│   ├── SafeDelete.h
+│   ├── ProjectDoctor.h
+│   ├── FileExplainer.h
+│   └── SmartTree.h
 │
 ├── src/
 │   ├── main.cpp
 │   ├── FileManager.cpp
 │   ├── CommandParser.cpp
 │   ├── TerminalUI.cpp
-│   │
 │   ├── FileHasher.cpp
 │   ├── DuplicateDetector.cpp
 │   ├── StorageAnalyzer.cpp
-│   │
 │   ├── ProjectDetector.cpp
 │   ├── GitAnalyzer.cpp
 │   ├── DependencyAnalyzer.cpp
-│   │
 │   ├── HistoryManager.cpp
 │   ├── UndoManager.cpp
-│   └── SnapshotManager.cpp
+│   ├── SnapshotManager.cpp
+│   ├── ProjectDashboard.cpp
+│   ├── SafeDelete.cpp
+│   ├── ProjectDoctor.cpp
+│   ├── FileExplainer.cpp
+│   └── SmartTree.cpp
 │
-└── tests/
-    └── test_cli.sh
+├── tests/
+│   ├── test_cli.sh
+│   └── ...
+│
+└── build/
 ```
 
 ---
 
 # 🛠️ Technologies
 
+The project is built using:
+
 * **C++17**
 * **CMake**
-* **C++ `<filesystem>`**
-* **POSIX APIs**
+* **std::filesystem**
+* **POSIX / Unix filesystem concepts**
 * **Git**
 * **Bash**
 * **CTest**
-* **Unix/Linux/macOS concepts**
+* **Shell scripting**
 
 ---
 
-# 📋 Requirements
+# 💻 Requirements
 
 You need:
 
 * A C++17-compatible compiler
 * CMake 3.16+
-* Git
 * Bash
+* Git
 
-Recommended:
-
-```text
-C++17
-CMake
-Clang or GCC
-Unix-like operating system
-```
-
-The project is primarily designed around Unix-like environments such as:
+The project is primarily designed for Unix-like environments such as:
 
 * macOS
 * Linux
 
 ---
 
-# ⚙️ Building
+# 🔨 Building
 
 Clone the repository:
 
 ```bash
-git clone <YOUR_REPOSITORY_URL>
+git clone https://github.com/SarinaTari/cli-file-manager.git
 cd cli-file-manager
 ```
 
 Create the build directory:
 
 ```bash
-mkdir build
-cd build
+cmake -S . -B build
 ```
 
-Configure the project:
+Build the project:
 
 ```bash
-cmake ..
-```
-
-Build:
-
-```bash
-cmake --build .
+cmake --build build
 ```
 
 The executable will be created at:
@@ -386,335 +388,435 @@ build/filemanager
 Run it:
 
 ```bash
-./filemanager
+./build/filemanager
 ```
 
 ---
 
-# 🧪 Running Tests
+# 🧪 Testing
 
-The project includes automated integration tests using **CTest**.
+The project includes an automated integration test suite.
 
-From the build directory:
+Build the project first:
 
 ```bash
-ctest --output-on-failure
+cmake --build build
 ```
 
-The tests cover functionality from the different development phases, including:
+Then run:
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
+The test suite covers functionality from the different development phases, including:
 
 * Navigation
-* File creation
-* Directory creation
-* Rename
-* Move
-* Copy
-* Delete
-* Links
-* Metadata
+* File operations
 * Recursive operations
-* Search
-* Sorting
+* Path handling
+* File information
 * Permissions
+* Symbolic links
 * Error handling
-* Duplicate detection
+* Safe filesystem operations
 * Storage analysis
-* Project detection
-* Git analysis
+* Duplicate detection
+* Git intelligence
 * Dependency analysis
 * History
 * Undo
 * Snapshots
-* Interactive UI
+* Project dashboard
+* Safe delete
+* Project health checks
+* File explanation
+* Smart project tree
+* Integration workflows
 
 ---
 
-# 💻 Example Usage
+# 🎮 Commands
 
-Start the application:
+The project supports a growing set of commands.
 
-```bash
-./filemanager
-```
-
-Example session:
+## Navigation
 
 ```text
-Current directory: "/Users/user/projects"
+pwd
+cd <path>
+back
+```
 
-> ls
+## File Operations
 
-> mkdir my-project
+```text
+mkdir <name>
+touch <name>
+rm <path>
+rename <old> <new>
+cp <source> <destination>
+mv <source> <destination>
+```
 
-> cd my-project
+## Information
 
-> touch main.cpp
+```text
+info <path>
+```
 
-> info main.cpp
+## Search & Analysis
 
-> history
+```text
+find <name>
+findsize <size>
+```
 
-> snapshot
+## Permissions
 
-> touch test.cpp
+```text
+chmod <mode> <path>
+```
 
-> diff
+## Storage
 
-> undo
+```text
+storage
+duplicates
+```
 
-> q
+## Developer Intelligence
+
+```text
+project
+doctor
+why <path>
+tree --smart
+```
+
+## History
+
+```text
+history
+undo
+clearhistory
+```
+
+## Snapshots
+
+```text
+snapshot
+showsnapshot
+diff
+clearsnapshot
+```
+
+## Exit
+
+```text
+q
+quit
+exit
 ```
 
 ---
 
-# 🧩 Development Phases
+# 🛡️ Safety
 
-The project was developed incrementally.
+Filesystem tools can be dangerous, so this project includes several safety mechanisms.
 
-### Phase 0 — Setup
+### Dangerous path protection
 
-* Project initialization
-* CMake
-* Compiler configuration
-* Git repository
+The application refuses dangerous operations such as attempting to delete:
 
-### Phase 1 — Navigation
+```text
+.
+..
+```
 
-* Current directory
-* Directory listing
-* `cd`
-* Parent directory
+### Overwrite protection
 
-### Phase 2 — File Operations
+Operations that could unintentionally overwrite existing data are checked.
 
-* Create
-* Rename
-* Move
-* Copy
-* Delete
+### Recursive operation safety
 
-### Phase 3 — Metadata
+Recursive operations are handled carefully to avoid operations such as copying or moving a directory into itself.
 
-* File information
-* Size
-* Type
-* Permissions
-* Modification time
+### Safe Delete
 
-### Phase 4 — Architecture
+The `safe rm` command displays a preview before deleting:
 
-* Command parser
-* File manager abstraction
-* Cleaner separation of responsibilities
+```text
+========================================
+             SAFE DELETE
+========================================
 
-### Phase 5 — Recursive Filesystem
+Target: ...
+Type: Directory
+Files: ...
+Directories: ...
+Total size: ...
 
-* Recursive traversal
-* Recursive operations
-* Directory trees
+WARNING: This operation cannot be undone.
 
-### Phase 6 — Path & Command Parsing
+Continue? [y/N]:
+```
 
-* Absolute paths
-* Relative paths
-* Quoted arguments
-* Paths containing spaces
+Only explicit `y` or `Y` confirmation proceeds with deletion.
 
-### Phase 7 — Search & Organization
+---
 
-* Search
-* Filtering
-* Sorting
+# 🧪 Development Approach
 
-### Phase 8 — Unix Filesystem Features
+This project was developed incrementally rather than being written all at once.
 
-* Permissions
+The development process was divided into phases.
+
+```text
+Phase 0   → Project setup
+Phase 1   → Basic navigation
+Phase 2   → File operations
+Phase 3   → File information
+Phase 4   → Architecture
+Phase 5   → Recursive filesystem operations
+Phase 6   → Advanced parsing and path handling
+Phase 7   → Search, sorting and filtering
+Phase 8   → Unix permissions and links
+Phase 9   → Error handling and filesystem safety
+Phase 10  → Automated testing
+Phase 11  → Interactive terminal UI
+Phase 12  → Storage analysis and duplicate detection
+Phase 13  → Developer intelligence
+Phase 14  → History, undo and snapshots
+Phase 15  → Developer tools and project intelligence
+```
+
+Each phase introduced new functionality while keeping previous functionality working.
+
+---
+
+# 📈 Current Version
+
+```text
+v0.15.0
+```
+
+Phase 15 focuses on turning the application into a more developer-oriented filesystem tool.
+
+Major additions in this phase:
+
+* Project Dashboard
+* Safe Delete
+* Project Health Check
+* File Explainer
+* Smart Project Tree
+* Integrated developer workflows
+* Expanded integration testing
+
+---
+
+# 🎯 Project Goals
+
+The long-term goal is to build more than a basic file manager.
+
+The project aims to become a:
+
+> **Developer-focused, safety-oriented filesystem intelligence tool.**
+
+Instead of simply answering:
+
+```text
+"What files are here?"
+```
+
+the application should eventually help answer:
+
+```text
+"What is this project?"
+"What does this file do?"
+"How is the project organized?"
+"Which files depend on each other?"
+"Where is the storage being used?"
+"What changed?"
+"Is the project healthy?"
+"What would happen if I delete this?"
+"Can I safely undo this operation?"
+```
+
+---
+
+# 📚 What This Project Demonstrates
+
+This project demonstrates practical knowledge of:
+
+### C++
+
+* Modern C++17
+* Classes and encapsulation
+* Header/source separation
+* STL
+* `std::filesystem`
+* Error handling
+* RAII-oriented resource management
+* Object-oriented design
+* Modular architecture
+
+### Operating Systems / Linux
+
+* Filesystems
+* Paths
+* File permissions
 * Symbolic links
 * Hard links
+* Unix filesystem behavior
+* Processes and command execution
+* Shell interaction
 
-### Phase 9 — Reliability & Safety
+### Software Engineering
 
+* Modular architecture
+* Separation of concerns
 * Error handling
-* Validation
-* Safer destructive operations
+* Defensive programming
+* Testing
+* Integration testing
+* Build systems
+* Versioning
+* Documentation
 
-### Phase 10 — Testing
+### Development Tools
 
-* Bash integration tests
-* CTest integration
-* Automated regression testing
+* Git
+* GitHub
+* CMake
+* Bash
+* CTest
+* Terminal applications
 
-### Phase 11 — Terminal UI
+---
 
-* Interactive command loop
-* Continuous sessions
-* Improved terminal experience
+# 🗺️ Future Development
 
-### Phase 12 — Advanced File Intelligence
+Potential future improvements include:
 
-* File hashing
-* Duplicate detection
-* Storage analysis
+* Performance optimization
+* Better terminal rendering
+* Keyboard-driven navigation
+* Improved search
+* More advanced dependency analysis
+* Persistent operation history
+* More powerful snapshot management
+* Configuration files
+* Plugin architecture
+* Parallel filesystem analysis
+* Improved cross-platform support
+* More comprehensive filesystem metadata
+* Advanced project detection
+* Better Git integration
+* File previewing
+* Interactive project analysis
 
-### Phase 13 — Developer Intelligence
+---
 
-* Project detection
-* Git awareness
-* C/C++ dependency analysis
+# 📜 Version History
 
-### Phase 14 — History & Recovery
+### v0.15.0
+
+Developer tools and project intelligence:
+
+* Project Dashboard
+* Safe Delete
+* Project Health Check
+* File Explainer
+* Smart Project Tree
+* Integration testing
+
+### v0.14.0
+
+Operation history and filesystem snapshots:
 
 * Operation history
 * Undo
 * Snapshots
-* Snapshot diff
+* Snapshot comparison
 
-### Phase 15 — Final Release
+### v0.13.0
 
-Planned improvements:
+Developer intelligence:
 
-* Performance optimization
-* Reliability improvements
-* Code cleanup
-* Documentation
-* Final testing
-* Portfolio preparation
+* Project detection
+* Git analysis
+* Dependency analysis
 
----
+### v0.12.0
 
-# 🔐 Safety Philosophy
+Storage intelligence:
 
-Filesystem applications can easily cause destructive operations.
-
-This project therefore emphasizes safe behavior.
-
-Examples:
-
-* Validate paths before operations
-* Avoid accidental overwrites
-* Ask for confirmation for destructive operations
-* Do not use recursive deletion when simple deletion is sufficient
-* Verify filesystem state before undoing operations
-* Preserve failed operations in history
-* Never assume the user's current directory is the directory where an operation occurred
-
-The goal is to make the tool useful without making filesystem mistakes unnecessarily dangerous.
-
----
-
-# 🎯 Design Goals
-
-The project is designed around five main goals:
-
-### 1. Learn Systems Programming
-
-Use C++ to interact directly with:
-
-* Filesystems
-* Paths
-* Permissions
-* Processes
-* Unix concepts
-
-### 2. Build Real Software
-
-Instead of isolated exercises, the project is developed as a complete application.
-
-### 3. Practice Software Architecture
-
-The code is divided into components with specific responsibilities.
-
-### 4. Practice Testing
-
-Features are accompanied by automated integration tests.
-
-### 5. Build a Portfolio Project
-
-The final application demonstrates practical knowledge of:
-
-```text
-C++
-├── STL
-├── filesystem
-├── classes
-├── modular architecture
-└── error handling
-
-Operating Systems
-├── Unix filesystem
-├── permissions
-├── symbolic links
-├── processes
-└── POSIX APIs
-
-Software Engineering
-├── CMake
-├── Git
-├── testing
-├── architecture
-└── documentation
-```
-
----
-
-# 📈 Future Improvements
-
-Potential future features include:
-
-* Persistent operation history
-* Persistent snapshots
-* Content-based snapshot comparison
-* Trash/recycle-bin support
-* Safer deletion recovery
-* Parallel duplicate scanning
-* Improved terminal UI
-* File previews
-* Configuration files
-* Custom aliases
-* Command scripting
-* File watching
-* Advanced Git integration
-* Dependency graphs
-* Remote filesystem support
-
----
-
-# 🧠 What I Learned
-
-This project provides practical experience with:
-
-* Modern C++
-* Object-oriented design
-* `std::filesystem`
-* Recursive filesystem traversal
-* Unix permissions
-* Symbolic and hard links
+* Storage analysis
+* Duplicate detection
 * File hashing
-* Directory analysis
-* Process execution
-* Git integration
-* C/C++ source analysis
-* Command parsing
-* Error handling
-* Automated testing
-* CMake
-* Git/GitHub
-* Software architecture
+
+### v0.11.0
+
+Interactive terminal UI.
+
+### v0.10.0
+
+Automated integration testing.
+
+### v0.9.0
+
+Filesystem safety and robust error handling.
+
+### v0.8.0
+
+Unix permissions and link support.
+
+### v0.7.0
+
+Search, sorting and filtering.
+
+### v0.6.0
+
+Advanced command parsing and path handling.
+
+### v0.5.0
+
+Recursive filesystem operations.
+
+### v0.4.0
+
+Project architecture refactoring.
+
+### v0.3.0
+
+File information and metadata.
+
+### v0.2.0
+
+File operations.
+
+### v0.1.0
+
+Basic filesystem navigation.
 
 ---
 
 # 👩‍💻 Author
 
-**Sarina**
+**Sarina Tari**
 
-Computer Engineering Student
+Computer Engineering student interested in:
 
-This project was developed as part of a larger effort to build practical systems-programming and software-engineering experience.
+* Systems programming
+* C/C++
+* Linux
+* Software engineering
+* Databases
+* Developer tools
 
 ---
 
 # 📄 License
 
-This project is available under the MIT License.
-
-See `LICENSE` for details.
+This project is currently intended as a personal educational and portfolio project.
