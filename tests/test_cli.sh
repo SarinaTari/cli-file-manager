@@ -1448,6 +1448,435 @@ assert_file_exists \
 
 
 # ============================================================
+# PHASE 15.3 — PROJECT HEALTH CHECK
+# ============================================================
+
+# Create a clean project structure for doctor tests.
+
+DOCTOR_TEST_DIR="$TEST_DIR/doctor-test"
+
+mkdir -p "$DOCTOR_TEST_DIR/src"
+mkdir -p "$DOCTOR_TEST_DIR/include"
+mkdir -p "$DOCTOR_TEST_DIR/tests"
+
+cat > "$DOCTOR_TEST_DIR/CMakeLists.txt" <<'EOF'
+cmake_minimum_required(VERSION 3.16)
+project(doctor_test)
+EOF
+
+cat > "$DOCTOR_TEST_DIR/README.md" <<'EOF'
+# Doctor Test Project
+EOF
+
+
+# ============================================================
+# DOCTOR — BASIC HEALTH CHECK
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'doctor doctor-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "PROJECT HEALTH CHECK" \
+    "doctor displays health check"
+
+assert_contains \
+    "$OUTPUT" \
+    "CMakeLists.txt found" \
+    "doctor checks CMakeLists.txt"
+
+assert_contains \
+    "$OUTPUT" \
+    "src directory found" \
+    "doctor checks src directory"
+
+assert_contains \
+    "$OUTPUT" \
+    "include directory found" \
+    "doctor checks include directory"
+
+assert_contains \
+    "$OUTPUT" \
+    "tests directory found" \
+    "doctor checks tests directory"
+
+assert_contains \
+    "$OUTPUT" \
+    "README.md found" \
+    "doctor checks README"
+
+assert_contains \
+    "$OUTPUT" \
+    "Git repository detected" \
+    "doctor checks Git repository"
+
+assert_contains \
+    "$OUTPUT" \
+    "Git working tree" \
+    "doctor checks Git status"
+
+assert_contains \
+    "$OUTPUT" \
+    "Summary:" \
+    "doctor displays summary"
+
+assert_contains \
+    "$OUTPUT" \
+    "Checks:" \
+    "doctor displays check count"
+
+assert_contains \
+    "$OUTPUT" \
+    "Passed:" \
+    "doctor displays passed count"
+
+assert_contains \
+    "$OUTPUT" \
+    "Warnings:" \
+    "doctor displays warning count"
+
+assert_contains \
+    "$OUTPUT" \
+    "Errors:" \
+    "doctor displays error count"
+
+
+# ============================================================
+# DOCTOR — CLEAN PROJECT STRUCTURE
+# ============================================================
+
+assert_contains \
+    "$OUTPUT" \
+    "[OK] CMakeLists.txt found" \
+    "doctor marks CMakeLists.txt as healthy"
+
+assert_contains \
+    "$OUTPUT" \
+    "[OK] src directory found" \
+    "doctor marks src as healthy"
+
+assert_contains \
+    "$OUTPUT" \
+    "[OK] include directory found" \
+    "doctor marks include as healthy"
+
+assert_contains \
+    "$OUTPUT" \
+    "[OK] tests directory found" \
+    "doctor marks tests as healthy"
+
+assert_contains \
+    "$OUTPUT" \
+    "[OK] README.md found" \
+    "doctor marks README as healthy"
+
+
+# ============================================================
+# DOCTOR — MISSING README
+# ============================================================
+
+rm "$DOCTOR_TEST_DIR/README.md"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'doctor doctor-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "[WARN] README.md found" \
+    "doctor warns about missing README"
+
+
+# ============================================================
+# DOCTOR — MISSING REQUIRED DIRECTORY
+# ============================================================
+
+rm -rf "$DOCTOR_TEST_DIR/src"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'doctor doctor-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "[ERROR] src directory found" \
+    "doctor detects missing src directory"
+
+
+# ============================================================
+# DOCTOR — MISSING INCLUDE DIRECTORY
+# ============================================================
+
+rm -rf "$DOCTOR_TEST_DIR/include"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'doctor doctor-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "[ERROR] include directory found" \
+    "doctor detects missing include directory"
+
+
+# ============================================================
+# DOCTOR — MISSING CMAKE
+# ============================================================
+
+rm -f "$DOCTOR_TEST_DIR/CMakeLists.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'doctor doctor-test\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "[ERROR] CMakeLists.txt found" \
+    "doctor detects missing CMakeLists.txt"
+
+
+# ============================================================
+# DOCTOR — NONEXISTENT PATH
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'doctor does-not-exist\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Path does not exist" \
+    "doctor rejects nonexistent path"
+
+
+# ============================================================
+# DOCTOR — TOO MANY ARGUMENTS
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'doctor one two\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Usage: doctor [path]" \
+    "doctor rejects too many arguments"
+
+
+# ============================================================
+# DOCTOR — DEFAULT PATH
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'doctor\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "PROJECT HEALTH CHECK" \
+    "doctor uses current directory by default"
+
+# ============================================================
+# PHASE 15.4 — FILE EXPLAINER
+# ============================================================
+
+WHY_TEST="$TEST_DIR/why-test"
+
+mkdir -p "$WHY_TEST/src"
+mkdir -p "$WHY_TEST/include"
+
+cat > "$WHY_TEST/CMakeLists.txt" <<'EOF'
+cmake_minimum_required(VERSION 3.16)
+
+project(why_test)
+
+add_executable(why_test
+    src/main.cpp
+)
+EOF
+
+cat > "$WHY_TEST/src/main.cpp" <<'EOF'
+#include "../include/test.h"
+
+int main() {
+    return 0;
+}
+EOF
+
+cat > "$WHY_TEST/include/test.h" <<'EOF'
+#pragma once
+
+int test_function();
+EOF
+
+cat > "$WHY_TEST/README.md" <<'EOF'
+# Why Test
+
+Test project for the file explainer.
+EOF
+
+cat > "$WHY_TEST/config.json" <<'EOF'
+{
+    "name": "why-test"
+}
+EOF
+
+git -C "$WHY_TEST" init -q
+git -C "$WHY_TEST" add .
+git -C "$WHY_TEST" \
+    -c user.name="Test User" \
+    -c user.email="test@example.com" \
+    commit -q -m "initial test commit"
+
+# SOURCE FILE
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'why why-test/src/main.cpp\nq\n' | "$PROGRAM"
+)"
+
+assert_contains "$OUTPUT" \
+    "FILE EXPLAINER" \
+    "why displays file explainer"
+
+assert_contains "$OUTPUT" \
+    "Name: main.cpp" \
+    "why displays file name"
+
+assert_contains "$OUTPUT" \
+    "Type: Source code" \
+    "why identifies C++ source file"
+
+assert_contains "$OUTPUT" \
+    "Language: C++" \
+    "why identifies C++ language"
+
+assert_contains "$OUTPUT" \
+    "Project Role:" \
+    "why displays project role"
+
+assert_contains "$OUTPUT" \
+    "Related Files:" \
+    "why displays related files"
+
+assert_contains "$OUTPUT" \
+    "Header:" \
+    "why identifies related header"
+
+assert_contains "$OUTPUT" \
+    "Git:" \
+    "why displays Git information"
+
+assert_contains "$OUTPUT" \
+    "Tracked: Yes" \
+    "why detects tracked file"
+
+assert_contains "$OUTPUT" \
+    "Status: Clean" \
+    "why detects clean Git status"
+
+assert_contains "$OUTPUT" \
+    "Purpose:" \
+    "why displays file purpose"
+
+# HEADER FILE
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'why why-test/include/test.h\nq\n' | "$PROGRAM"
+)"
+
+assert_contains "$OUTPUT" \
+    "Type: Header / interface" \
+    "why identifies header file"
+
+assert_contains "$OUTPUT" \
+    "Language: C/C++ header" \
+    "why identifies header language"
+
+# CMAKE FILE
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'why why-test/CMakeLists.txt\nq\n' | "$PROGRAM"
+)"
+
+assert_contains "$OUTPUT" \
+    "Type: Build configuration" \
+    "why identifies CMake configuration"
+
+assert_contains "$OUTPUT" \
+    "Defines how the project is built." \
+    "why explains build configuration"
+
+# README
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'why why-test/README.md\nq\n' | "$PROGRAM"
+)"
+
+assert_contains "$OUTPUT" \
+    "Type: Project documentation" \
+    "why identifies documentation"
+
+# CONFIGURATION FILE
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'why why-test/config.json\nq\n' | "$PROGRAM"
+)"
+
+assert_contains "$OUTPUT" \
+    "Type: Configuration / data" \
+    "why identifies JSON configuration"
+
+# NONEXISTENT FILE
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'why why-test/does-not-exist.txt\nq\n' | "$PROGRAM"
+)"
+
+assert_contains "$OUTPUT" \
+    "Path does not exist" \
+    "why rejects nonexistent file"
+
+# DIRECTORY
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'why why-test/src\nq\n' | "$PROGRAM"
+)"
+
+assert_contains "$OUTPUT" \
+    "why currently supports files only" \
+    "why rejects directories"
+
+# INVALID ARGUMENTS
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'why\nq\n' | "$PROGRAM"
+)"
+
+assert_contains "$OUTPUT" \
+    "Usage: why <path>" \
+    "why validates missing argument"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'why one two\nq\n' | "$PROGRAM"
+)"
+
+assert_contains "$OUTPUT" \
+    "Usage: why <path>" \
+    "why validates extra arguments"
+
+    
+# ============================================================
 # UI COMMAND
 # ============================================================
 

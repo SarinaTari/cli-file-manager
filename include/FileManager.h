@@ -6,6 +6,8 @@
 #include "ProjectDashboard.h"
 #include "ProjectDashboard.h"
 #include "SafeDelete.h"
+#include "ProjectDoctor.h"
+#include "FileExplainer.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -90,6 +92,10 @@ public:
         const std::string& name
     ) const;
 
+    void explain_file(
+        const std::string& path
+    ) const;
+
     void show_tree(
         const std::string& name = "."
     ) const;
@@ -99,6 +105,10 @@ public:
     ) const;
 
     void show_project_dashboard(
+        const std::string& path = "."
+    ) const;
+
+    void project_doctor(
         const std::string& path = "."
     ) const;
 

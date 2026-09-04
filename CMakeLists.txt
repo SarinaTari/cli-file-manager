@@ -21,6 +21,8 @@ add_executable(filemanager
     src/SnapshotManager.cpp
     src/ProjectDashboard.cpp
     src/SafeDelete.cpp
+    src/ProjectDoctor.cpp
+    src/FileExplainer.cpp
 )
 
 target_include_directories(filemanager PRIVATE

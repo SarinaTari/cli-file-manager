@@ -656,6 +656,21 @@ int main() {
                 );
             }
 
+            else if (command.action == "doctor") {
+                if (command.arguments.size() > 1) {
+                    throw std::invalid_argument(
+                        "Usage: doctor [path]"
+                    );
+                }
+
+                const std::string path =
+                    command.arguments.empty()
+                        ? "."
+                        : command.arguments[0];
+
+                file_manager.project_doctor(path);
+            }
+
             // --------------------------------------------------
             // Git
             // --------------------------------------------------
@@ -675,6 +690,18 @@ int main() {
 
                 GitAnalyzer::analyze(
                     path
+                );
+            }
+
+            else if (command.action == "why") {
+                if (command.arguments.size() != 1) {
+                    throw std::invalid_argument(
+                        "Usage: why <path>"
+                    );
+                }
+
+                file_manager.explain_file(
+                    command.arguments[0]
                 );
             }
 

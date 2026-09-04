@@ -1563,3 +1563,19 @@ void FileManager::show_project_dashboard(
         resolve_path(path)
     );
 }
+
+void FileManager::project_doctor(
+    const std::string& path
+) const {
+    ProjectDoctor::check(
+        resolve_path(path)
+    );
+}
+
+void FileManager::explain_file(
+    const std::string& path
+) const {
+    FileExplainer::explain(
+        resolve_path(path)
+    );
+}
