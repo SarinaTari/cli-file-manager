@@ -346,6 +346,21 @@ int main() {
                 );
             }
 
+            else if (command.action == "safe") {
+                if (
+                    command.arguments.size() != 2
+                    || command.arguments[0] != "rm"
+                ) {
+                    throw std::invalid_argument(
+                        "Usage: safe rm <path>"
+                    );
+                }
+
+                file_manager.safe_remove(
+                    command.arguments[1]
+                );
+            }
+
             // --------------------------------------------------
             // Information
             // --------------------------------------------------

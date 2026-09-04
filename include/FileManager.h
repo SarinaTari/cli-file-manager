@@ -5,6 +5,7 @@
 #include "UndoManager.h"
 #include "ProjectDashboard.h"
 #include "ProjectDashboard.h"
+#include "SafeDelete.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -68,6 +69,10 @@ public:
     void remove_item(
         const std::string& name
     );
+
+    void safe_remove(
+        const std::string& path
+    ) const;
 
     void show_file_size(
         const std::string& name

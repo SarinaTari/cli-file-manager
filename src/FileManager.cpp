@@ -538,6 +538,21 @@ void FileManager::remove_item(
         << "\"\n";
 }
 
+void FileManager::safe_remove(
+    const std::string& path
+) const {
+    if (path == "." || path == "..") {
+        throw std::runtime_error(
+            "Refusing to delete a dangerous path: " +
+            path
+        );
+    }
+
+    SafeDelete::remove(
+        resolve_path(path)
+    );
+}
+
 void FileManager::show_file_size(
     const std::string& name
 ) const {

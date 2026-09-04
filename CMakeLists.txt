@@ -20,6 +20,7 @@ add_executable(filemanager
     src/UndoManager.cpp
     src/SnapshotManager.cpp
     src/ProjectDashboard.cpp
+    src/SafeDelete.cpp
 )
 
 target_include_directories(filemanager PRIVATE

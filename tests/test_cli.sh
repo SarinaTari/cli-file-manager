@@ -745,6 +745,11 @@ assert_contains \
     "C/C++ header files: 1" \
     "project counts C++ header files"
 
+
+# ============================================================
+# PHASE 15.1 — PROJECT DASHBOARD
+# ============================================================
+
 assert_contains \
     "$OUTPUT" \
     "PROJECT DASHBOARD" \
@@ -771,6 +776,10 @@ assert_contains \
     "project displays language breakdown"
 
 
+# ============================================================
+# PHASE 13 — DEPENDENCY ANALYZER
+# ============================================================
+
 OUTPUT="$(run_program "deps \"$PROJECT_DIR\"
 q
 ")"
@@ -795,6 +804,10 @@ assert_contains \
     "test.h" \
     "deps detects local header include"
 
+
+# ============================================================
+# PHASE 13 — GIT DETECTOR
+# ============================================================
 
 git -C "$TEST_DIR" init -q
 
@@ -1115,6 +1128,323 @@ assert_contains \
     "$OUTPUT" \
     "No snapshot exists." \
     "clearsnapshot removes stored snapshot"
+
+
+# ============================================================
+# PHASE 15.2 — SAFE DELETE
+# ============================================================
+
+SAFE_DELETE_TEST="$TEST_DIR/safe-delete-test"
+
+mkdir -p "$SAFE_DELETE_TEST/subdirectory"
+
+printf 'hello' \
+    > "$SAFE_DELETE_TEST/file1.txt"
+
+printf 'world' \
+    > "$SAFE_DELETE_TEST/subdirectory/file2.txt"
+
+
+# ============================================================
+# SAFE DELETE — PREVIEW
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'safe rm safe-delete-test\nn\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "SAFE DELETE" \
+    "safe rm displays safe delete preview"
+
+assert_contains \
+    "$OUTPUT" \
+    "Files:" \
+    "safe rm displays file count"
+
+assert_contains \
+    "$OUTPUT" \
+    "Directories:" \
+    "safe rm displays directory count"
+
+assert_contains \
+    "$OUTPUT" \
+    "Total size:" \
+    "safe rm displays total size"
+
+assert_contains \
+    "$OUTPUT" \
+    "WARNING: This operation cannot be undone." \
+    "safe rm displays deletion warning"
+
+assert_contains \
+    "$OUTPUT" \
+    "Continue? [y/N]:" \
+    "safe rm asks for confirmation"
+
+
+# ============================================================
+# SAFE DELETE — CANCELLATION
+# ============================================================
+
+assert_file_exists \
+    "$SAFE_DELETE_TEST" \
+    "safe rm cancellation preserves target"
+
+
+assert_contains \
+    "$OUTPUT" \
+    "Deletion cancelled." \
+    "safe rm reports cancellation"
+
+
+# ============================================================
+# SAFE DELETE — CONFIRMED FILE DELETION
+# ============================================================
+
+SAFE_DELETE_FILE="$TEST_DIR/safe-delete-file.txt"
+
+printf 'safe delete file' \
+    > "$SAFE_DELETE_FILE"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'safe rm safe-delete-file.txt\ny\nq\n' | "$PROGRAM"
+)"
+
+assert_file_not_exists \
+    "$SAFE_DELETE_FILE" \
+    "safe rm deletes confirmed file"
+
+
+assert_contains \
+    "$OUTPUT" \
+    "Deleted successfully." \
+    "safe rm reports successful file deletion"
+
+
+# ============================================================
+# SAFE DELETE — CONFIRMED DIRECTORY DELETION
+# ============================================================
+
+SAFE_DELETE_CONFIRM="$TEST_DIR/safe-delete-confirm"
+
+mkdir -p "$SAFE_DELETE_CONFIRM/subdir"
+
+printf 'file one' \
+    > "$SAFE_DELETE_CONFIRM/file1.txt"
+
+printf 'file two' \
+    > "$SAFE_DELETE_CONFIRM/subdir/file2.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'safe rm safe-delete-confirm\ny\nq\n' | "$PROGRAM"
+)"
+
+assert_file_not_exists \
+    "$SAFE_DELETE_CONFIRM" \
+    "safe rm deletes confirmed directory recursively"
+
+
+assert_contains \
+    "$OUTPUT" \
+    "Deleted successfully." \
+    "safe rm reports successful directory deletion"
+
+
+# ============================================================
+# SAFE DELETE — EMPTY INPUT CANCELS
+# ============================================================
+
+SAFE_DELETE_EMPTY="$TEST_DIR/safe-delete-empty"
+
+mkdir "$SAFE_DELETE_EMPTY"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'safe rm safe-delete-empty\n\nq\n' | "$PROGRAM"
+)"
+
+assert_file_exists \
+    "$SAFE_DELETE_EMPTY" \
+    "safe rm empty confirmation preserves target"
+
+
+assert_contains \
+    "$OUTPUT" \
+    "Deletion cancelled." \
+    "safe rm empty confirmation cancels deletion"
+
+
+# ============================================================
+# SAFE DELETE — OTHER INPUT CANCELS
+# ============================================================
+
+SAFE_DELETE_OTHER="$TEST_DIR/safe-delete-other"
+
+mkdir "$SAFE_DELETE_OTHER"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'safe rm safe-delete-other\nhello\nq\n' | "$PROGRAM"
+)"
+
+assert_file_exists \
+    "$SAFE_DELETE_OTHER" \
+    "safe rm invalid confirmation preserves target"
+
+
+assert_contains \
+    "$OUTPUT" \
+    "Deletion cancelled." \
+    "safe rm invalid confirmation cancels deletion"
+
+
+# ============================================================
+# SAFE DELETE — DANGEROUS CURRENT DIRECTORY
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'safe rm .\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "dangerous path" \
+    "safe rm rejects current-directory path"
+
+
+# ============================================================
+# SAFE DELETE — DANGEROUS PARENT DIRECTORY
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'safe rm ..\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "dangerous path" \
+    "safe rm rejects parent-directory path"
+
+
+# ============================================================
+# SAFE DELETE — NONEXISTENT PATH
+# ============================================================
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'safe rm does-not-exist\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Path does not exist" \
+    "safe rm rejects nonexistent path"
+
+
+# ============================================================
+# SAFE DELETE — SINGLE FILE STATISTICS
+# ============================================================
+
+SAFE_DELETE_STAT_FILE="$TEST_DIR/safe-delete-stat.txt"
+
+printf 'statistics' \
+    > "$SAFE_DELETE_STAT_FILE"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'safe rm safe-delete-stat.txt\nn\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Type: File" \
+    "safe rm identifies a single file"
+
+assert_contains \
+    "$OUTPUT" \
+    "Files: 1" \
+    "safe rm counts a single file correctly"
+
+assert_contains \
+    "$OUTPUT" \
+    "Directories: 0" \
+    "safe rm reports zero directories for a file"
+
+
+# ============================================================
+# SAFE DELETE — DIRECTORY STATISTICS
+# ============================================================
+
+SAFE_DELETE_STATS_DIR="$TEST_DIR/safe-delete-stats-dir"
+
+mkdir -p "$SAFE_DELETE_STATS_DIR/a/b"
+
+printf 'one' \
+    > "$SAFE_DELETE_STATS_DIR/file1.txt"
+
+printf 'two' \
+    > "$SAFE_DELETE_STATS_DIR/a/file2.txt"
+
+printf 'three' \
+    > "$SAFE_DELETE_STATS_DIR/a/b/file3.txt"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'safe rm safe-delete-stats-dir\nn\nq\n' | "$PROGRAM"
+)"
+
+assert_contains \
+    "$OUTPUT" \
+    "Type: Directory" \
+    "safe rm identifies a directory"
+
+assert_contains \
+    "$OUTPUT" \
+    "Files: 3" \
+    "safe rm counts recursive files correctly"
+
+assert_contains \
+    "$OUTPUT" \
+    "Directories: 2" \
+    "safe rm counts recursive directories correctly"
+
+
+# ============================================================
+# SAFE DELETE — DIRECTORY SYMLINK
+# ============================================================
+
+SAFE_DELETE_SYMLINK_TARGET="$TEST_DIR/safe-delete-symlink-target"
+SAFE_DELETE_SYMLINK_DIR="$TEST_DIR/safe-delete-symlink-dir"
+
+mkdir -p "$SAFE_DELETE_SYMLINK_TARGET"
+mkdir -p "$SAFE_DELETE_SYMLINK_DIR"
+
+printf 'outside content' \
+    > "$SAFE_DELETE_SYMLINK_TARGET/outside.txt"
+
+ln -s \
+    "$SAFE_DELETE_SYMLINK_TARGET" \
+    "$SAFE_DELETE_SYMLINK_DIR/link"
+
+OUTPUT="$(
+    cd "$TEST_DIR" || exit 1
+    printf 'safe rm safe-delete-symlink-dir\nn\nq\n' | "$PROGRAM"
+)"
+
+assert_file_exists \
+    "$SAFE_DELETE_SYMLINK_TARGET/outside.txt" \
+    "safe rm does not traverse directory symlink target"
+
+assert_file_exists \
+    "$SAFE_DELETE_SYMLINK_DIR" \
+    "safe rm symlink preview cancellation preserves directory"
 
 
 # ============================================================
