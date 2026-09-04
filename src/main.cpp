@@ -3,7 +3,7 @@
 #include "DuplicateDetector.h"
 #include "FileManager.h"
 #include "GitAnalyzer.h"
-#include "ProjectDetector.h"
+#include "ProjectDashboard.h"
 #include "StorageAnalyzer.h"
 #include "TerminalUI.h"
 
@@ -60,7 +60,7 @@ Advanced filesystem:
   duplicates [path]           Find duplicate files
 
 Developer intelligence:
-  project [path]              Detect project type and statistics
+  project [path]              Show project dashboard
   git [path]                  Analyze Git repository
   deps [path]                 Analyze C/C++ dependencies
 
@@ -580,7 +580,7 @@ int main() {
             }
 
             // --------------------------------------------------
-            // Phase 12: Advanced filesystem
+            // Advanced filesystem
             // --------------------------------------------------
 
             else if (command.action == "analyze") {
@@ -620,7 +620,7 @@ int main() {
             }
 
             // --------------------------------------------------
-            // Phase 13: Developer intelligence
+            // Phase 15.1: Project Dashboard
             // --------------------------------------------------
 
             else if (command.action == "project") {
@@ -636,10 +636,14 @@ int main() {
                         file_manager
                     );
 
-                ProjectDetector::analyze(
+                ProjectDashboard::show(
                     path
                 );
             }
+
+            // --------------------------------------------------
+            // Git
+            // --------------------------------------------------
 
             else if (command.action == "git") {
                 if (command.arguments.size() > 1) {
@@ -658,6 +662,10 @@ int main() {
                     path
                 );
             }
+
+            // --------------------------------------------------
+            // Dependencies
+            // --------------------------------------------------
 
             else if (command.action == "deps") {
                 if (command.arguments.size() > 1) {
@@ -695,6 +703,10 @@ int main() {
                 ui.run();
             }
 
+            // --------------------------------------------------
+            // History
+            // --------------------------------------------------
+
             else if (command.action == "history") {
                 if (!command.arguments.empty()) {
                     throw std::invalid_argument(
@@ -714,6 +726,10 @@ int main() {
 
                 file_manager.undo();
             }
+
+            // --------------------------------------------------
+            // Snapshots
+            // --------------------------------------------------
 
             else if (command.action == "snapshot") {
                 if (!command.arguments.empty()) {

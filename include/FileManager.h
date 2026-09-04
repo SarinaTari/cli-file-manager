@@ -3,6 +3,8 @@
 #include "HistoryManager.h"
 #include "SnapshotManager.h"
 #include "UndoManager.h"
+#include "ProjectDashboard.h"
+#include "ProjectDashboard.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -89,6 +91,10 @@ public:
 
     void show_directory_size(
         const std::string& name
+    ) const;
+
+    void show_project_dashboard(
+        const std::string& path = "."
     ) const;
 
     void find_by_name(

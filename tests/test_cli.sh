@@ -745,6 +745,31 @@ assert_contains \
     "C/C++ header files: 1" \
     "project counts C++ header files"
 
+assert_contains \
+    "$OUTPUT" \
+    "PROJECT DASHBOARD" \
+    "project displays dashboard"
+
+assert_contains \
+    "$OUTPUT" \
+    "Total files:" \
+    "project displays total file count"
+
+assert_contains \
+    "$OUTPUT" \
+    "Storage:" \
+    "project displays storage information"
+
+assert_contains \
+    "$OUTPUT" \
+    "Git:" \
+    "project displays Git information"
+
+assert_contains \
+    "$OUTPUT" \
+    "Languages:" \
+    "project displays language breakdown"
+
 
 OUTPUT="$(run_program "deps \"$PROJECT_DIR\"
 q

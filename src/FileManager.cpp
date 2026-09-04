@@ -1540,3 +1540,11 @@ void FileManager::clear_snapshot() {
     std::cout
         << "Snapshot cleared.\n";
 }
+
+void FileManager::show_project_dashboard(
+    const std::string& path
+) const {
+    ProjectDashboard::show(
+        resolve_path(path)
+    );
+}
