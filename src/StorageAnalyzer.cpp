@@ -1,6 +1,7 @@
 #include "StorageAnalyzer.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <system_error>

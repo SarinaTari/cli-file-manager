@@ -4,11 +4,14 @@
 #include "SnapshotManager.h"
 #include "UndoManager.h"
 #include "ProjectDashboard.h"
-#include "ProjectDashboard.h"
 #include "SafeDelete.h"
 #include "ProjectDoctor.h"
 #include "FileExplainer.h"
 #include "SmartTree.h"
+#include "StorageAnalyzer.h"
+#include "DuplicateDetector.h"
+#include "GitAnalyzer.h"
+#include "DependencyAnalyzer.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -109,6 +112,22 @@ public:
         const std::string& name
     ) const;
 
+    void analyze_storage(
+        const std::string& path = "."
+    ) const;
+
+    void find_duplicates(
+        const std::string& path = "."
+    ) const;
+
+    void analyze_git(
+        const std::string& path = "."
+    ) const;
+
+    void analyze_dependencies(
+        const std::string& path = "."
+    ) const;
+
     void show_project_dashboard(
         const std::string& path = "."
     ) const;
@@ -155,7 +174,7 @@ public:
         const std::string& name
     ) const;
 
-        void show_history() const;
+    void show_history() const;
 
     void undo();
 

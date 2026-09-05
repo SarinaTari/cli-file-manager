@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <string>
 
 class ProjectDashboard {
 public:

@@ -1,19 +1,12 @@
 #include "CommandParser.h"
-#include "DependencyAnalyzer.h"
-#include "DuplicateDetector.h"
 #include "FileManager.h"
-#include "GitAnalyzer.h"
-#include "ProjectDashboard.h"
-#include "StorageAnalyzer.h"
 #include "TerminalUI.h"
 
 #include <cstdint>
-#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 
-namespace fs = std::filesystem;
 
 namespace {
 
@@ -138,17 +131,6 @@ std::uintmax_t parse_size(
             "Minimum size must be a non-negative integer."
         );
     }
-}
-
-fs::path get_optional_path(
-    const Command& command,
-    const FileManager& file_manager
-) {
-    if (command.arguments.empty()) {
-        return file_manager.get_current_directory();
-    }
-
-    return fs::path(command.arguments[0]);
 }
 
 }
@@ -648,13 +630,12 @@ int main() {
                     );
                 }
 
-                fs::path path =
-                    get_optional_path(
-                        command,
-                        file_manager
-                    );
+                const std::string path =
+                    command.arguments.empty()
+                        ? "."
+                        : command.arguments[0];
 
-                StorageAnalyzer::analyze(
+                file_manager.analyze_storage(
                     path
                 );
             }
@@ -666,13 +647,12 @@ int main() {
                     );
                 }
 
-                fs::path path =
-                    get_optional_path(
-                        command,
-                        file_manager
-                    );
+                const std::string path =
+                    command.arguments.empty()
+                        ? "."
+                        : command.arguments[0];
 
-                DuplicateDetector::find_duplicates(
+                file_manager.find_duplicates(
                     path
                 );
             }
@@ -688,13 +668,12 @@ int main() {
                     );
                 }
 
-                fs::path path =
-                    get_optional_path(
-                        command,
-                        file_manager
-                    );
+                const std::string path =
+                    command.arguments.empty()
+                        ? "."
+                        : command.arguments[0];
 
-                ProjectDashboard::show(
+                file_manager.show_project_dashboard(
                     path
                 );
             }
@@ -727,13 +706,12 @@ int main() {
                     );
                 }
 
-                fs::path path =
-                    get_optional_path(
-                        command,
-                        file_manager
-                    );
+                const std::string path =
+                    command.arguments.empty()
+                        ? "."
+                        : command.arguments[0];
 
-                GitAnalyzer::analyze(
+                file_manager.analyze_git(
                     path
                 );
             }
@@ -761,13 +739,12 @@ int main() {
                     );
                 }
 
-                fs::path path =
-                    get_optional_path(
-                        command,
-                        file_manager
-                    );
+                const std::string path =
+                    command.arguments.empty()
+                        ? "."
+                        : command.arguments[0];
 
-                DependencyAnalyzer::analyze(
+                file_manager.analyze_dependencies(
                     path
                 );
             }

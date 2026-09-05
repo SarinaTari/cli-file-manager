@@ -12,12 +12,10 @@ void SnapshotManager::create(
     collect(root);
 
     std::cout
-        << "Snapshot created.\n";
-
-    std::cout
-        << "Entries: "
-        << snapshot_entries.size()
-        << "\n";
+    << "Snapshot created.\n"
+    << "Entries: "
+    << snapshot_entries.size()
+    << "\n";
 }
 
 void SnapshotManager::collect(

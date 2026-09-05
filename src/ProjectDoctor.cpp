@@ -1,10 +1,8 @@
 #include "ProjectDoctor.h"
 
 #include <cstdlib>
-#include <filesystem>
 #include <iostream>
 #include <stdexcept>
-#include <string>
 #include <vector>
 
 namespace fs = std::filesystem;

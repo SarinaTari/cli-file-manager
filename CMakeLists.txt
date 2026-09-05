@@ -26,6 +26,12 @@ add_executable(filemanager
     src/SmartTree.cpp
 )
 
+target_compile_options(filemanager PRIVATE
+    -Wall
+    -Wextra
+    -Wpedantic
+)
+
 target_include_directories(filemanager PRIVATE
     include
 )

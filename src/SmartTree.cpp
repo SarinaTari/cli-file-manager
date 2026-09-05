@@ -1,7 +1,6 @@
 #include "SmartTree.h"
 
 #include <algorithm>
-#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <system_error>
@@ -199,9 +198,7 @@ void SmartTree::print_tree(
     std::error_code error;
 
     const std::string name =
-        is_root
-            ? path.filename().string()
-            : path.filename().string();
+        path.filename().string();
 
     const std::string connector =
         is_root

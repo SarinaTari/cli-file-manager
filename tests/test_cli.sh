@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 set -u
+
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <program>"
+    exit 1
+fi
 
 PROGRAM="$1"
 

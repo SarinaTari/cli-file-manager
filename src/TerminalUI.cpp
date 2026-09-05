@@ -4,8 +4,6 @@
 
 #include <algorithm>
 #include <iostream>
-#include <termios.h>
-#include <unistd.h>
 
 TerminalUI::TerminalUI(FileManager& manager)
     : file_manager(manager) {
@@ -21,9 +19,9 @@ void TerminalUI::run() {
         handle_input();
     }
 
-    show_cursor();
     clear_screen();
     move_cursor_home();
+    show_cursor();
 }
 
 void TerminalUI::refresh() {

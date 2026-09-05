@@ -1,12 +1,9 @@
 #include "SafeDelete.h"
 
-#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include <string>
-#include <vector>
 
 namespace fs = std::filesystem;
 

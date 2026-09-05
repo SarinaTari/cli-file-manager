@@ -7,8 +7,7 @@
 UndoManager::UndoManager(
     HistoryManager& history_manager
 )
-    : history(history_manager) {
-}
+    : history(history_manager) {}
 
 void UndoManager::undo(
     const fs::path& current_directory

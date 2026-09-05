@@ -5,8 +5,7 @@
 HistoryManager::HistoryManager(
     std::size_t max_entries
 )
-    : maximum_entries(max_entries) {
-}
+    : maximum_entries(max_entries) {}
 
 void HistoryManager::record(
     const std::string& operation,
